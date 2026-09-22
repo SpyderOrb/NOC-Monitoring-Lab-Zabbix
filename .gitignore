@@ -1,0 +1,29 @@
+# Local secrets
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+*.key
+*.pem
+
+# Local virtual machines and installation media
+vms/
+images/
+*.qcow2
+*.img
+*.iso
+*.vdi
+*.vmdk
+*.ova
+*.ovf
+*.vbox
+*.vbox-prev
+
+# Local caches and temporary files
+__pycache__/
+*.pyc
+.venv/
+*.tmp
+*.log
+.DS_Store

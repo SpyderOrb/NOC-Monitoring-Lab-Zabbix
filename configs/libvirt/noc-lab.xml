@@ -1,0 +1,13 @@
+<network>
+  <name>noc-lab</name>
+  <forward mode='nat'/>
+  <bridge name='virbr-noc' stp='on' delay='0'/>
+  <domain name='noc.test' localOnly='yes'/>
+  <ip address='192.168.77.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.77.100' end='192.168.77.199'/>
+      <host mac='52:54:00:77:00:10' name='zabbix-server' ip='192.168.77.10'/>
+      <host mac='52:54:00:77:00:20' name='linux-target' ip='192.168.77.20'/>
+    </dhcp>
+  </ip>
+</network>
