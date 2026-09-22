@@ -1,29 +1,79 @@
-# Local secrets
+# Local workspace configuration
+/AGENTS.md
+/.project/
+/.agents/
+/.codex/
+.idea/
+.vscode/
+*.code-workspace
+
+# Credentials and local environment
 .env
 .env.*
 !.env.example
 secrets/
 credentials/
+.ssh/
+id_rsa
+id_ecdsa
+id_ed25519
 *.key
 *.pem
+*.p12
+*.pfx
+
+# Rendered cloud-init data; sanitized *.example templates remain trackable
+cloud-init/generated/
+user-data
+meta-data
+vendor-data
+network-config
 
 # Local virtual machines and installation media
-vms/
-images/
+/vms/
+/images/
+/downloads/
+/snapshots/
+/backups/
+*.qcow
 *.qcow2
+*.raw
 *.img
 *.iso
 *.vdi
 *.vmdk
+*.vhd
+*.vhdx
 *.ova
 *.ovf
 *.vbox
 *.vbox-prev
+*.nvram
+*.fd
+*.sav
 
-# Local caches and temporary files
+# Python environments and caches
 __pycache__/
-*.pyc
+*.py[cod]
 .venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime files, downloads in progress and editor backups
 *.tmp
 *.log
+*.pid
+*.sock
+*.part
+*.crdownload
+*.bak
+*.swp
+*.swo
+*~
+
+# Desktop metadata
 .DS_Store
+Thumbs.db
+.directory
