@@ -10,16 +10,9 @@ The lab will use two Linux virtual machines to explore host availability, HTTP s
 
 Planned monitoring flow on the configured `noc-lab` NAT network:
 
-```mermaid
-flowchart LR
-    browser[Host browser]
-    subgraph lab["noc-lab · 192.168.77.0/24"]
-        server["Zabbix server VM<br/>192.168.77.10 · planned"]
-        target["Linux target VM<br/>192.168.77.20 · planned"]
-    end
-    browser -->|Web interface| server
-    server -->|Agent and HTTP checks| target
-```
+[![Planned monitoring flow: host browser to Zabbix server at 192.168.77.10, then agent and HTTP checks to the Linux target at 192.168.77.20](docs/topology.png)](docs/topology.png)
+
+*Logical design · [Editable SVG](docs/topology.svg) · [Verified scope](docs/VALIDATION.md)*
 
 | Layer | Technology | State |
 |---|---|---|

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="590" viewBox="0 0 960 590" role="img" aria-labelledby="title desc">
+  <title id="title">NOC Monitoring Lab: planned Zabbix monitoring flow</title>
+  <desc id="desc">The host browser will access the Zabbix server at 192.168.77.10. The server will monitor a Linux target at 192.168.77.20 through agent and HTTP checks. Both guests are planned on the configured noc-lab NAT network, 192.168.77.0/24, with gateway 192.168.77.1. The KVM host, network and storage are prepared; the guest systems and Zabbix are not deployed.</desc>
+  <defs>
+    <style>
+      text { font-family: "DejaVu Sans", sans-serif; fill: #182b42; }
+      .title { font-size: 34px; font-weight: 700; }
+      .subtitle { font-size: 20px; fill: #52657b; }
+      .name { font-size: 25px; font-weight: 700; }
+      .address { font-size: 22px; font-family: "DejaVu Sans Mono", monospace; }
+      .detail { font-size: 18px; fill: #52657b; }
+      .label { font-size: 18px; font-weight: 700; fill: #3d70ae; }
+      .link { fill: none; stroke: #4675b2; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#4675b2"/>
+    </marker>
+  </defs>
+
+  <rect width="960" height="590" fill="#ffffff"/>
+  <text x="40" y="57" class="title">NOC Monitoring Lab</text>
+  <text x="40" y="90" class="subtitle">Zabbix · Planned monitoring flow</text>
+
+  <!-- The browser runs on the physical host, outside the guest network. -->
+  <rect x="70" y="128" width="330" height="84" rx="14" fill="#ffffff" stroke="#c9d5e1" stroke-width="2"/>
+  <text x="235" y="163" text-anchor="middle" class="name">Host browser</text>
+  <text x="235" y="193" text-anchor="middle" class="detail">View dashboard and events</text>
+
+  <!-- The network exists; the two guest cards describe the planned deployment. -->
+  <rect x="40" y="268" width="880" height="252" rx="18" fill="#f4f7fb" stroke="#c9d5e1" stroke-width="2"/>
+  <text x="890" y="302" text-anchor="end" class="name">noc-lab · IPv4 NAT</text>
+  <text x="890" y="331" text-anchor="end" class="detail">192.168.77.0/24 · Gateway 192.168.77.1</text>
+
+  <path d="M235 212 V346" class="link"/>
+  <text x="255" y="250" class="label">Web interface</text>
+
+  <rect x="70" y="350" width="330" height="144" rx="14" fill="#e3efff" stroke="#3d70ae" stroke-width="2"/>
+  <text x="235" y="384" text-anchor="middle" class="name">Zabbix server VM</text>
+  <text x="235" y="419" text-anchor="middle" class="address">192.168.77.10</text>
+  <text x="235" y="450" text-anchor="middle" class="detail">Server · database · web UI</text>
+  <text x="235" y="479" text-anchor="middle" class="detail">Planned Ubuntu guest</text>
+
+  <path d="M400 422 H556" class="link"/>
+  <text x="480" y="380" text-anchor="middle" class="label">Agent + HTTP</text>
+  <text x="480" y="404" text-anchor="middle" class="label">checks</text>
+
+  <rect x="560" y="350" width="330" height="144" rx="14" fill="#e3f3ee" stroke="#408774" stroke-width="2"/>
+  <text x="725" y="384" text-anchor="middle" class="name">Linux target VM</text>
+  <text x="725" y="419" text-anchor="middle" class="address">192.168.77.20</text>
+  <text x="725" y="450" text-anchor="middle" class="detail">Zabbix agent · HTTP service</text>
+  <text x="725" y="479" text-anchor="middle" class="detail">Planned Ubuntu guest</text>
+
+  <text x="40" y="562" class="subtitle">Prepared: KVM host, NAT network and storage</text>
+</svg>
