@@ -6,6 +6,12 @@ The lab uses two Linux virtual machines to explore host availability, HTTP servi
 
 > **Work in progress:** both Ubuntu guests were running at the 2026-09-27 baseline check. Boot, SSH, guest-to-guest connectivity, DNS and package repository access are verified. Zabbix deployment and fault exercises are next. See the [verified results and test limits](docs/VALIDATION.md).
 
+## New here?
+
+Start with **[How the lab works and what to do next](docs/GUIDE.md)**: a plain-English explanation, the roadmap, settings you can change and a first hands-on session.
+
+The short version: one VM will watch the other. You will deliberately stop a service or create a small fault on the target, then use Zabbix to observe the problem and its recovery. **The VMs are ready; monitoring is still to be built.**
+
 ## Lab overview
 
 Planned monitoring flow on the configured `noc-lab` NAT network:
@@ -45,9 +51,10 @@ The intended result is a small dashboard, measured detection and recovery timing
 
 ## Explore the project
 
+- **[Learning guide and roadmap](docs/GUIDE.md)** — understand the components, choose settings and work through the lab by hand.
 - **[Build guide](docs/LAB.md)** — VM roles, network settings and steps to reproduce the guest baseline.
 - **[Validation results](docs/VALIDATION.md)** — directly observed checks and what remains untested.
 - **[Network configuration](configs/libvirt/noc-lab.xml)** — reusable libvirt NAT network and DHCP reservations.
-- **[Guest creation script](scripts/create-guests.py)** — pinned image, separate disks and a [cloud-init template](configs/cloud-init/user-data.example).
+- **[Optional guest creation script](scripts/create-guests.py)** — creates a fresh guest baseline using a pinned image and a [cloud-init template](configs/cloud-init/user-data.example); it does not install monitoring.
 
-To reproduce the setup, start with the build guide and check the proposed subnet and resource budget against your own host. VM images, credentials and generated local files are excluded from this repository.
+To reproduce the setup, read the learning guide first, then follow the build guide with a subnet and resource budget suitable for your own host. VM images, credentials and generated local files are excluded from this repository.

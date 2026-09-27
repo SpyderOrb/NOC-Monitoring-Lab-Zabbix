@@ -2,6 +2,8 @@
 
 Two Ubuntu VMs are ready; monitoring is the next step. This page describes the lab configuration and how its guest baseline was built. See [validation](VALIDATION.md) for observed results, rather than assuming every planned feature already works.
 
+New to the project? Read the [learning guide and roadmap](GUIDE.md) first. Its [controls table](GUIDE.md#your-controls) explains which settings you can change and when they take effect.
+
 ## What runs where
 
 - **Physical host:** QEMU/KVM runs the VMs; libvirt manages their network and disks. virt-manager is the graphical management tool.
