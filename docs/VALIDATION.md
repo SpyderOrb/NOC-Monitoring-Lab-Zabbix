@@ -1,17 +1,21 @@
 # Validation results
 
-## Virtualization host — 2026-09-22
+## Ubuntu guests — 2026-09-27
 
-Directly observed on CachyOS, kernel `7.2.4-1-cachyos`, with the package versions in [LAB.md](LAB.md). Five acceptance checks passed:
+Both guests were created from the authenticated Ubuntu release image build `20260926`. Five acceptance groups passed; [recorded observations](evidence/2026-09-27-guest-baseline.txt) include exact versions, times and baseline memory/disk readings.
 
 | Check | Observation |
 |---|---|
-| KVM access | `/dev/kvm` opened successfully; KVM API returned version 12. |
-| VM lifecycle | Through `qemu:///system`, libvirt created a transient KVM domain with 1 vCPU and 128 MiB RAM in the paused state, then stopped it. Its UUID was absent afterward. It had no disk or NIC; no operating system was booted. |
-| Lab network | `noc-lab` active with autostart, NAT, gateway `.1`, and DHCP reservations `.10` / `.20`. IPv4 forwarding enabled; NAT rules and all four scoped UFW rules present. DNS at `192.168.77.1` answered a query for `example.org`. |
-| Storage | The `noc-lab` directory pool was active with autostart and contained zero volumes. |
-| Host integration | The default route matched the pre-change snapshot. `libvirtd.service` was enabled. No TCP listener existed on libvirt management ports 16509 or 16514. |
+| Provenance and boot | Canonical manifest signature and image SHA256 verified. Both guests booted Ubuntu 24.04.5 LTS, kernel `6.8.0-142-generic`, through UEFI. Cloud-init completed with no errors; no failed systemd units. |
+| SSH and identity | Key login worked for `noc`; password and keyboard-interactive authentication disabled, root password locked. Machine IDs and SSH host keys differ between guests. |
+| Addressing and peer connectivity | DHCP assigned `.10` to the server and `.20` to the target; both use gateway `192.168.77.1`. Three ICMP requests succeeded in each direction with zero packet loss. |
+| DNS, repositories and time | Both resolved `archive.ubuntu.com` and completed `apt-get update` with `APT::Update::Error-Mode=any`. NTP synchronized on both guests. |
+| Host integration and budget | Guest agents answered through libvirt. Allocations matched 2 vCPU / 4 GiB / 24 GiB and 1 vCPU / 1 GiB / 12 GiB. Guest autostart disabled. |
 
-Additional static checks: the network XML passed `virt-xml-validate`; local coordination, credentials and image paths are excluded from Git.
+Not yet tested: Zabbix server/agent, HTTP service, dashboard, fault/recovery scenarios, or guest restart persistence. Guest agent refers to QEMU guest agent, not the Zabbix agent. The baseline is an idle guest observation, not a load or capacity test.
 
-Limits: no full guest OS boot, DHCP lease acquisition, guest-to-guest reachability, guest internet access, GUI interaction or reboot persistence test has been performed. Autostart settings were inspected, not verified by rebooting the host. DNS was tested from the host. No Zabbix metrics, dashboard, alert timings or fault/recovery results exist yet. MON-01, MON-02 and MON-03 remain planned.
+## Earlier infrastructure check — 2026-09-22
+
+Before creating the guests, KVM access, a temporary paused VM lifecycle, the lab network/DNS and the storage pool were checked. Those checks did not boot a guest OS. The guest results above are the more useful baseline for continuing the project.
+
+The network XML also passed schema validation. Local credentials, VM images and workspace notes are excluded from Git.

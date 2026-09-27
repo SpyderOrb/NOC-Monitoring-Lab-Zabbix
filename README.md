@@ -2,9 +2,9 @@
 
 A practical monitoring portfolio built around one workflow: **detect a fault, investigate the cause, restore service and verify recovery**.
 
-The lab will use two Linux virtual machines to explore host availability, HTTP service health and CPU monitoring. Each fault exercise will record the observed problem and recovery times.
+The lab uses two Linux virtual machines to explore host availability, HTTP service health and CPU monitoring. Each fault exercise will record the observed problem and recovery times.
 
-> **Work in progress:** the virtualization host, lab network and storage are prepared. Five host acceptance checks passed. The two Linux guests and Zabbix are not deployed yet. See the [verified results and test limits](docs/VALIDATION.md).
+> **Work in progress:** both Ubuntu guests were running at the 2026-09-27 baseline check. Boot, SSH, guest-to-guest connectivity, DNS and package repository access are verified. Zabbix deployment and fault exercises are next. See the [verified results and test limits](docs/VALIDATION.md).
 
 ## Lab overview
 
@@ -17,7 +17,7 @@ Planned monitoring flow on the configured `noc-lab` NAT network:
 | Layer | Technology | State |
 |---|---|---|
 | Virtualization | QEMU/KVM, libvirt, virt-manager | Installed; KVM lifecycle verified |
-| Guest systems | Ubuntu Server 24.04 LTS | Planned |
+| Guest systems | Ubuntu Server 24.04.5 LTS | Running; baseline connectivity verified |
 | Monitoring | Zabbix 7.0 LTS, Linux agent and HTTP service | Planned |
 
 The starting guest budget is **3 vCPUs and 5 GiB RAM in total**. Resource allocations, addresses and setup commands are documented in the [build guide](docs/LAB.md).
@@ -38,15 +38,16 @@ The intended result is a small dashboard, measured detection and recovery timing
 
 - [x] Inspect host capacity and hardware virtualization.
 - [x] Prepare and check KVM, the lab network and storage.
-- [ ] Create both guests and verify connectivity.
+- [x] Create both guests and verify connectivity.
 - [ ] Install Zabbix and collect the first target metric.
 - [ ] Configure monitoring, triggers and a dashboard.
 - [ ] Reproduce all three faults and document recovery.
 
 ## Explore the project
 
-- **[Build guide](docs/LAB.md)** — design choices, installed versions, setup commands and guest sizing.
+- **[Build guide](docs/LAB.md)** — VM roles, network settings and steps to reproduce the guest baseline.
 - **[Validation results](docs/VALIDATION.md)** — directly observed checks and what remains untested.
 - **[Network configuration](configs/libvirt/noc-lab.xml)** — reusable libvirt NAT network and DHCP reservations.
+- **[Guest creation script](scripts/create-guests.py)** — pinned image, separate disks and a [cloud-init template](configs/cloud-init/user-data.example).
 
 To reproduce the setup, start with the build guide and check the proposed subnet and resource budget against your own host. VM images, credentials and generated local files are excluded from this repository.

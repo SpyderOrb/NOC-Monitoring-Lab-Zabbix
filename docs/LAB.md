@@ -1,43 +1,43 @@
-# Lab design and build steps
+# Lab setup
 
-Status: virtualization host prepared and checked on 2026-09-22; the two Linux guests and Zabbix deployment are pending. See [validation](VALIDATION.md).
+Two Ubuntu VMs are ready; monitoring is the next step. This page describes the lab configuration and how its guest baseline was built. See [validation](VALIDATION.md) for observed results, rather than assuming every planned feature already works.
 
-## Initial topology
+## What runs where
 
-```text
-Host browser -> Zabbix server VM -> Linux target VM
-                                   agent + HTTP service
-```
+- **Physical host:** QEMU/KVM runs the VMs; libvirt manages their network and disks. virt-manager is the graphical management tool.
+- **zabbix-server:** will collect monitoring data, store it in a database and serve the browser dashboard.
+- **linux-target:** will run Zabbix Agent 2 and a small HTTP service. Fault exercises happen here.
 
-The implemented libvirt network `noc-lab` uses bridge `virbr-noc`, gateway `192.168.77.1/24` and IPv4 NAT. The subnet did not overlap the host routes at setup. Its DNS domain is `noc.test`; DHCP reservations are in [the reusable network definition](../configs/libvirt/noc-lab.xml). Guest outbound connectivity will be tested after guest creation. NAT permits guest-initiated access to the LAN as well as the internet; this is not a network for hostile workloads.
+The VMs currently run Ubuntu Server **24.04.5 LTS**. Zabbix **7.0 LTS** is planned, not installed.
 
-## Host preparation
+## Lab settings
 
-The host has an Intel i5-1145G7 (4 cores / 8 threads), approximately 15 GiB usable RAM and hardware KVM support. Before installation, approximately 10 GiB RAM and 113 GiB disk were available. KVM was already enabled; no firmware change was needed.
+| VM | vCPU | RAM | Disk capacity | Reserved IP | MAC address |
+|---|---:|---:|---:|---|---|
+| zabbix-server | 2 | 4 GiB | 24 GiB | 192.168.77.10 | 52:54:00:77:00:10 |
+| linux-target | 1 | 1 GiB | 12 GiB | 192.168.77.20 | 52:54:00:77:00:20 |
 
-Installed from the configured CachyOS/Arch repositories:
+These are starting allocations for this small lab, not production sizing recommendations. Reassess memory after installing services. Each VM uses UEFI, virtio devices and its own qcow2 disk; sparse disk files grow as data is written.
 
-| Package | Installed version |
-|---|---|
-| qemu-desktop | 11.1.1-2 |
-| libvirt | 1:12.7.0-1.1 |
-| virt-manager / virt-install | 5.1.0-4 |
-| dnsmasq | 2.93-1.1 (already installed) |
-| edk2-ovmf | 202608-1 |
+The `noc-lab` network uses subnet `192.168.77.0/24`, gateway `192.168.77.1`, bridge `virbr-noc` and DNS domain `noc.test`. DHCP assigns the reserved addresses above; its dynamic range is `.100`–`.199`. NAT lets guests reach package repositories without connecting them directly to the physical LAN. It also permits guest-initiated LAN access; it is not full isolation from your LAN.
 
-QEMU/KVM runs the guests; libvirt manages their lifecycle, network and storage; virt-manager provides a graphical view. Management uses `qemu:///system` with local polkit authentication. The packaged `libvirtd.service` and its local sockets are enabled. No libvirt TCP management listener was enabled. The network driver uses its default nftables backend.
+## Prepare your own virtualization host
 
-The existing UFW firewall remains active. Four lab-specific IPv4 rules permit DHCP, DNS and outbound forwarding through the current uplink `wlan0`. If the uplink changes, review the forwarding rule before expecting guest internet access. Host Wi-Fi addressing and the default route were preserved.
+Use a Linux host with hardware virtualization enabled. Install QEMU/KVM, libvirt, virt-manager, virt-install, UEFI firmware, dnsmasq and Python libvirt bindings using your distribution's instructions. Service names and firewall setup vary by distribution.
 
-Commands used on the inspected host (run from the repository root; inspect existing routes, firewall rules, networks and pools before reuse):
+Before creating anything, check available memory/storage, existing libvirt networks and routes. Choose a lab subnet that does not overlap your LAN or VPN. The optional creation script requires at least **7 GiB available RAM and 45 GiB free disk** before it starts; these are its guardrails, not measurements of the author's computer.
+
+Run these inspection commands **on the physical host**:
 
 ```sh
-sudo pacman -S --needed qemu-desktop libvirt virt-manager virt-install dnsmasq edk2-ovmf
-sudo systemctl enable --now libvirtd.service
-sudo ufw allow in on virbr-noc proto udp from any to 0.0.0.0/0 port 67 comment 'NOC lab DHCP'
-sudo ufw allow in on virbr-noc proto udp from 192.168.77.0/24 to 192.168.77.1 port 53 comment 'NOC lab DNS UDP'
-sudo ufw allow in on virbr-noc proto tcp from 192.168.77.0/24 to 192.168.77.1 port 53 comment 'NOC lab DNS TCP'
-sudo ufw route allow in on virbr-noc out on wlan0 from 192.168.77.0/24 to any comment 'NOC lab outbound'
+ip route
+virsh -c qemu:///system --readonly net-list --all
+virsh -c qemu:///system --readonly pool-list --all
+```
+
+On a new setup, review [the network XML](../configs/libvirt/noc-lab.xml), then create the network and storage pool from the repository root. Skip creation when they already exist; inspect them instead.
+
+```sh
 sudo virsh -c qemu:///system net-define configs/libvirt/noc-lab.xml
 sudo virsh -c qemu:///system net-start noc-lab
 sudo virsh -c qemu:///system net-autostart noc-lab
@@ -47,52 +47,39 @@ sudo virsh -c qemu:///system pool-start noc-lab
 sudo virsh -c qemu:///system pool-autostart noc-lab
 ```
 
-The package transaction used existing synchronized package databases; it did not run a standalone database refresh or a system upgrade. On an outdated rolling-release host, complete its normal system update before installing packages.
+If your host firewall blocks the lab, allow guest DHCP, DNS to the lab gateway and outbound forwarding through your actual uplink. Keep the firewall enabled; do not copy an interface name from another computer. Verify guest DNS and package access after boot.
 
-Inspect with `virsh -c qemu:///system --readonly net-list --all` and `virsh -c qemu:///system --readonly pool-list --all`. Open virt-manager with the system QEMU/KVM connection; management may request administrator authentication. The dedicated pool is empty. Its autostart activates the storage directory, not the guests.
+Network and pool autostart are enabled in this build. **VM autostart is disabled:** opening the storage pool does not start the guests.
 
-## Planned guests
+## Create and access the guests
 
-| Guest | vCPU | RAM | Maximum qcow2 disk | Reserved IPv4 | NIC MAC |
-|---|---:|---:|---:|---|---|
-| zabbix-server | 2 | 4 GiB | 24 GiB | 192.168.77.10 | 52:54:00:77:00:10 |
-| linux-target | 1 | 1 GiB | 12 GiB | 192.168.77.20 | 52:54:00:77:00:20 |
+### Reproduce guest creation
 
-This is a starting budget for a two-host lab, not a vendor sizing recommendation. Recheck resources before creating guests and measure pressure after deployment. Sparse disks grow as data is written; snapshots also consume host disk. Leave guest autostart disabled initially.
+1. Obtain `ubuntu-24.04-server-cloudimg-amd64.img`, `SHA256SUMS` and `SHA256SUMS.gpg` from the [official release build 20260926](https://cloud-images.ubuntu.com/releases/noble/release-20260926/). Use the released build, not the moving daily image URL.
+2. Follow [Canonical's signature verification procedure](https://ubuntu.com/docs/public-images/public-images-how-to/verify-image-checksum/). The verified signing fingerprint is `D2EB44626FDDC30B513D5BB71A5D6C4C7DB87C81`. Then check the image against the authenticated manifest. The expected SHA256 is:
 
-Selected guest release family: Ubuntu Server 24.04 LTS, with Zabbix 7.0 LTS packages planned. Both are supported release families as checked on 2026-09-22; neither is installed. Use an official amd64 cloud image, verify its checksum against an authenticated upstream manifest, and record its exact build and installed package versions. Use distinct SSH host keys and keep cloud-init credentials local. UEFI firmware is installed for guest creation.
+   ```text
+   6a81c37564db9b1ee84e141922625e1d7c5b389b99bb3c572e0243607d5bb4d2
+   ```
 
-## Build stages
+3. Prepare a dedicated SSH key and run [the provisioner](../scripts/create-guests.py) from the repository root. These are first-creation commands; keep any existing key and guests instead of replacing them:
 
-1. Prepare virtualization and create the two guests. Select a supported guest OS and Zabbix release from current upstream documentation. Set a memory/disk budget and verify guest reachability.
-2. Install Zabbix and connect the target agent. Acceptance: a recent target metric is visible and its origin/time can be explained.
-3. Add host availability, HTTP and CPU monitoring, a small dashboard, deliberate thresholds and local problem/recovery events. Check that normal operation is healthy.
-4. Reproduce the three faults below, restore normal operation and export the reusable configuration. Add concise validation results and runbooks.
+   ```sh
+   install -d -m 700 credentials
+   ssh-keygen -t ed25519 -N '' -C noc-lab-admin -f credentials/noc-lab_ed25519
+   sudo python3 scripts/create-guests.py \
+     images/ubuntu-24.04-20260926/ubuntu-24.04-server-cloudimg-amd64.img \
+     credentials/noc-lab_ed25519.pub
+   ```
 
-## Exercises
+The provisioner checks the pinned image hash, available resources and DHCP reservations, and refuses existing guest names, disks or rendered configuration. It requires the prepared `noc-lab` network/pool and the host's libvirt Python bindings. It creates independent disks, injects [cloud-init user data](../configs/cloud-init/user-data.example) and boots both guests. Partial failures leave state for inspection; the script does not delete or recreate existing guests automatically.
 
-| ID | Controlled fault | Expected observation | Recovery |
-|---|---|---|---|
-| MON-01 | Stop the target's HTTP service | HTTP problem while the target remains reachable | Start service; HTTP succeeds and the event recovers |
-| MON-02 | Shut down the target VM | Host-unavailable problem; assess dependent alert suppression | Start guest; monitoring resumes and the event recovers |
-| MON-03 | Generate bounded CPU load inside the target VM | Sustained-load problem after the configured evaluation period | Stop load; CPU normalizes and the event recovers |
+Cloud-init creates the `noc` administrator, disables SSH password login, generates distinct host keys, sets UTC, installs QEMU guest agent and updates APT metadata. Passwordless sudo is limited to the lab's administrator account inside each guest. Rendered data and keys stay excluded from Git. Guest initialization completed without errors in this build.
 
-For each exercise record the fault time, first problem time, restoration time, recovery event time and relevant polling/evaluation intervals. These are observed lab timings, not production SLA claims. Exercise MON-03 must run with a fixed duration and within the guest's CPU allocation.
+Connect with the project key, for example `ssh -i credentials/noc-lab_ed25519 -o UserKnownHostsFile=credentials/known_hosts noc@192.168.77.10` (target: `.20`). Confirm the first host key, retain it and do not disable host-key checking. After a physical-host restart, start each guest using `sudo virsh -c qemu:///system start zabbix-server` and `sudo virsh -c qemu:///system start linux-target`.
 
-## Implementation notes
+## What the repository can reproduce
 
-- Use agents and ordinary Linux services first. SNMP network-device monitoring can be a later extension.
-- Choose thresholds from observed baseline data; test both an expected problem and normal recovery.
-- Keep snapshots or a reversible rollback before fault exercises.
-- Add evidence and exports only when produced. Exclude secrets from reusable exports.
+The network XML, cloud-init template and creation script reproduce the documented guest baseline with the pinned image. They do **not** install Zabbix, create a dashboard or run fault exercises. Exact guest versions and checks are recorded in [validation](VALIDATION.md).
 
-## Upstream references
-
-- [CachyOS QEMU and VMM setup](https://wiki.cachyos.org/virtualization/qemu_and_vmm_setup/) — distribution setup context; this lab uses the installed nftables backend with scoped UFW rules.
-- [libvirt daemons](https://libvirt.org/daemons.html) and [network format](https://libvirt.org/formatnetwork.html).
-- [Ubuntu 24.04 release notes](https://documentation.ubuntu.com/release-notes/24.04/) and [official cloud images](https://cloud-images.ubuntu.com/noble/current/).
-- [Zabbix release lifecycle](https://www.zabbix.com/life_cycle_and_release_policy) and [7.0 packages for Ubuntu 24.04](https://www.zabbix.com/download?zabbix=7.0&os_distribution=ubuntu&os_version=24.04&components=server_frontend_agent&db=pgsql&ws=nginx).
-- [Zabbix requirements](https://www.zabbix.com/documentation/current/en/manual/installation/requirements)
-- [Zabbix appliance](https://www.zabbix.com/documentation/current/en/manual/appliance)
-- [Linux monitoring](https://www.zabbix.com/documentation/current/en/manual/guides/monitor_linux)
-- [Web monitoring](https://www.zabbix.com/documentation/current/en/manual/web_monitoring)
+The creation script is optional automation for a fresh lab. Review it before running it: it creates and boots both VMs. For existing guests, use SSH and virt-manager or `virsh`; do not rerun provisioning to apply changes.

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="590" viewBox="0 0 960 590" role="img" aria-labelledby="title desc">
   <title id="title">NOC Monitoring Lab: planned Zabbix monitoring flow</title>
-  <desc id="desc">The host browser will access the Zabbix server at 192.168.77.10. The server will monitor a Linux target at 192.168.77.20 through agent and HTTP checks. Both guests are planned on the configured noc-lab NAT network, 192.168.77.0/24, with gateway 192.168.77.1. The KVM host, network and storage are prepared; the guest systems and Zabbix are not deployed.</desc>
+  <desc id="desc">The host browser will access Zabbix at 192.168.77.10. The server will monitor a Linux target at 192.168.77.20 through agent and HTTP checks. Both Ubuntu guests are running on the configured noc-lab NAT network, 192.168.77.0/24, with gateway 192.168.77.1. Guest boot, SSH and network access are verified; the Zabbix stack and target monitoring services are not deployed yet.</desc>
   <defs>
     <style>
       text { font-family: "DejaVu Sans", sans-serif; fill: #182b42; }
@@ -26,7 +26,7 @@
   <text x="235" y="163" text-anchor="middle" class="name">Host browser</text>
   <text x="235" y="193" text-anchor="middle" class="detail">View dashboard and events</text>
 
-  <!-- The network exists; the two guest cards describe the planned deployment. -->
+  <!-- The network and guests are ready; the monitoring flow is still planned. -->
   <rect x="40" y="268" width="880" height="252" rx="18" fill="#f4f7fb" stroke="#c9d5e1" stroke-width="2"/>
   <text x="890" y="302" text-anchor="end" class="name">noc-lab · IPv4 NAT</text>
   <text x="890" y="331" text-anchor="end" class="detail">192.168.77.0/24 · Gateway 192.168.77.1</text>
@@ -37,8 +37,8 @@
   <rect x="70" y="350" width="330" height="144" rx="14" fill="#e3efff" stroke="#3d70ae" stroke-width="2"/>
   <text x="235" y="384" text-anchor="middle" class="name">Zabbix server VM</text>
   <text x="235" y="419" text-anchor="middle" class="address">192.168.77.10</text>
-  <text x="235" y="450" text-anchor="middle" class="detail">Server · database · web UI</text>
-  <text x="235" y="479" text-anchor="middle" class="detail">Planned Ubuntu guest</text>
+  <text x="235" y="450" text-anchor="middle" class="detail">Zabbix stack: planned</text>
+  <text x="235" y="479" text-anchor="middle" class="detail">Ubuntu 24.04.5 · ready</text>
 
   <path d="M400 422 H556" class="link"/>
   <text x="480" y="380" text-anchor="middle" class="label">Agent + HTTP</text>
@@ -47,8 +47,8 @@
   <rect x="560" y="350" width="330" height="144" rx="14" fill="#e3f3ee" stroke="#408774" stroke-width="2"/>
   <text x="725" y="384" text-anchor="middle" class="name">Linux target VM</text>
   <text x="725" y="419" text-anchor="middle" class="address">192.168.77.20</text>
-  <text x="725" y="450" text-anchor="middle" class="detail">Zabbix agent · HTTP service</text>
-  <text x="725" y="479" text-anchor="middle" class="detail">Planned Ubuntu guest</text>
+  <text x="725" y="450" text-anchor="middle" class="detail">Agent + HTTP: planned</text>
+  <text x="725" y="479" text-anchor="middle" class="detail">Ubuntu 24.04.5 · ready</text>
 
-  <text x="40" y="562" class="subtitle">Prepared: KVM host, NAT network and storage</text>
+  <text x="40" y="562" class="subtitle">Verified: guest boot, SSH and network access</text>
 </svg>

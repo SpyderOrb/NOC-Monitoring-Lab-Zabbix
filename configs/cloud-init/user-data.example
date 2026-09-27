@@ -1,0 +1,25 @@
+#cloud-config
+# Replace the placeholders before use; keep rendered data outside Git.
+hostname: __HOSTNAME__
+manage_etc_hosts: true
+timezone: Etc/UTC
+disable_root: true
+ssh_pwauth: false
+ssh_deletekeys: true
+ssh_genkeytypes: [ed25519, rsa]
+users:
+  - name: noc
+    gecos: NOC Lab Administrator
+    groups: [adm, sudo]
+    shell: /bin/bash
+    lock_passwd: true
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh_authorized_keys:
+      - __SSH_PUBLIC_KEY__
+package_update: true
+package_upgrade: false
+packages:
+  - qemu-guest-agent
+runcmd:
+  - [systemctl, enable, --now, qemu-guest-agent.service]
+final_message: "NOC guest initialization finished after $UPTIME seconds."
