@@ -1,91 +1,48 @@
-# Start here: understand and build the lab
+# Understand the lab
 
-This is a small learning lab, not a finished monitoring product. Two Ubuntu VMs have been built and checked. The next milestone is **one real measurement from the target visible in Zabbix**.
+The idea is simple: one machine watches another, you introduce a controlled fault, and monitoring helps you notice and explain what happened.
 
-Read this page for the story and learning order, [LAB.md](LAB.md) for setup details, and [VALIDATION.md](VALIDATION.md) for evidence of what actually worked.
+This page describes the intended workflow. [Validation](VALIDATION.md) distinguishes implemented features from planned work; [LAB.md](LAB.md) contains setup details.
 
-## The idea in plain English
+## What each part does
 
-Imagine a small service that should stay available. Monitoring helps you notice when it stops working and confirm when it recovers.
-
-| Part | Job |
+| Part | Purpose |
 |---|---|
-| Your physical computer | Runs the two virtual machines. It is not the fault-test target. |
-| `zabbix-server` VM | Will run Zabbix, its database and its web interface. It is the monitoring station. |
-| `linux-target` VM | Will run a tiny website and a monitoring agent. This is the machine we deliberately break and repair. |
-| Browser | Will show the Zabbix interface: measurements, graphs and problems. |
-| `noc-lab` virtual network | Connects the VMs and gives them access to package repositories through NAT. |
+| Physical computer | Runs the virtual machines. Fault experiments happen inside the target VM. |
+| `zabbix-server` | Will collect measurements, store them in a database and serve the web interface. |
+| `linux-target` | Will run the monitored agent and HTTP service. This is where faults are introduced. |
+| `noc-lab` network | Connects the VMs and provides outbound access through NAT. |
+| Browser | Will display Zabbix measurements, graphs and problems. |
 
-The intended flow is:
+The QEMU guest agent helps the virtualization tools communicate with Ubuntu. It is separate from Zabbix Agent 2, which will provide monitoring data.
 
-1. The target's **agent** provides measurements such as CPU usage. Separately, Zabbix checks whether the HTTP service answers.
-2. Zabbix stores measurements as **items**. An item is one thing being measured.
-3. A **trigger** evaluates a condition, such as CPU usage staying too high for a chosen period.
-4. A matching condition creates a **problem event** in the interface. After the condition clears, a recovery event records that change.
-5. You investigate, restore the service, and compare the fault time with the problem and recovery times.
+## From a measurement to a problem
 
-A **template** is a reusable collection of monitoring settings. A **dashboard** presents selected results. Neither replaces checking the actual measurements and event times.
+1. An agent provides measurements such as CPU usage. HTTP checks separately test the web service.
+2. An **item** describes one measurement Zabbix collects.
+3. A **trigger** evaluates a condition, such as CPU usage staying above a chosen threshold.
+4. A **problem event** records when that condition becomes true. Recovery records when it clears.
+5. You investigate, repair the cause and verify that measurements return to normal.
 
-The existing **QEMU guest agent** helps libvirt manage the VMs. It is different from **Zabbix Agent 2**, which is not installed yet.
+A **template** groups reusable monitoring settings. A **dashboard** displays selected results. A successful ping proves network reachability, not that an application is healthy.
 
-## Roadmap: one visible result at a time
+## Learning order
 
-| Step | State | What you do | How you know it worked |
-|---|---|---|---|
-| 1. Build the lab | Verified on 2026-09-27 | Prepare virtualization, create both Ubuntu guests, connect over SSH. | Guests boot; SSH, peer connectivity, DNS and package access work. |
-| 2. Get the first metric | Next | Install the Zabbix server/database/frontend, install Agent 2 on the target, and add the target in Zabbix. | A target measurement appears with a recent timestamp. |
-| 3. Make normal operation visible | Planned | Add the HTTP service, host/HTTP/CPU checks and a small dashboard. Choose intervals and thresholds. | Normal readings make sense and there are no unexplained problems. |
-| 4. Break and repair | Planned | Stop HTTP, shut down the target, then run a bounded CPU load; restore normal operation after each exercise. | Each fault produces the expected problem and recovery, with recorded times. |
-| 5. Package the results | Planned | Export reusable monitoring settings and write short recovery runbooks. | Another reader can understand the checks and repeat the documented exercises. |
+| Stage | Practical outcome |
+|---|---|
+| Build the environment | Two Linux VMs with working SSH, addressing, DNS and package access |
+| Collect the first metric | A recent target measurement visible in Zabbix |
+| Establish normal operation | Host, HTTP and CPU checks with sensible intervals and thresholds |
+| Reproduce faults | A problem and recovery for each of the three planned exercises |
+| Share the result | Sanitized configuration exports, observed timings and short runbooks |
 
-Do not start fault experiments until normal monitoring works. For each exercise record: fault start, first problem, service restoration, recovery event, and the polling/evaluation settings. Notifications initially stay in the local dashboard.
+For every fault, record when it started, when Zabbix detected it, when service was restored and when recovery appeared. Polling intervals and trigger evaluation periods help explain the delay.
 
-Installation commands for the monitoring stack will be documented as that stage is implemented and checked. This repository currently reproduces the **guest baseline**, not the full roadmap.
+## Make it your own
 
-## Your controls
+- **CPU and RAM:** choose VM allocations in virt-manager; review the [baseline budget](LAB.md). Shut down existing guests before changing their persistent allocations.
+- **Network:** choose a subnet that does not overlap your LAN or VPN. Keep DHCP reservations and guest MAC addresses consistent.
+- **Initial guest settings:** review the [cloud-init template](../configs/cloud-init/user-data.example) if using the cloud-image method. It applies during initial setup, not every time the file is edited.
+- **Monitoring:** once installed, choose items, polling intervals, thresholds and dashboard widgets in Zabbix.
 
-You can change the lab deliberately rather than accepting every default. Change one thing, understand the effect, and check the result before moving on.
-
-| Choice | Where you control it | When it takes effect |
-|---|---|---|
-| VM CPU and RAM | Before creation: `GUESTS` in [create-guests.py](../scripts/create-guests.py). Existing VM: shut it down normally, edit its allocation in virt-manager, then start it. | Creation or the next boot after editing the VM definition. |
-| Lab addresses | [Network XML](../configs/libvirt/noc-lab.xml); keep the script's guest MAC/IP values consistent. | When applied to libvirt and guest leases are renewed; editing the file alone does not change the live network. |
-| Initial guest user and packages | [cloud-init template](../configs/cloud-init/user-data.example). | First boot of a newly created guest. Existing guests are managed through SSH. |
-| Starting and stopping VMs | virt-manager, or `virsh` on the physical host. | Immediately; stopping the target later becomes a monitoring exercise. |
-| What to monitor, how often, and when to alert | Zabbix items, templates and triggers, once installed. | After saving the monitoring configuration and waiting for collection/evaluation. |
-| What you see | Zabbix dashboard widgets, once installed. | After saving the dashboard. |
-
-The optional creation script has fixed defaults: network/pool names, storage path, image checksum and minimum free-resource checks. It is a small reproducible helper, not a general configuration tool. Read it before use. Changing VM sizes also means reviewing its resource checks. For an existing lab, work with the VMs directly instead of rerunning the script.
-
-For learning, use a short cycle: **understand the purpose → choose the setting → run the step yourself → inspect the output → record the result**. Keep credentials and personal notes outside public commits.
-
-## First hands-on session: find your way around
-
-These checks inspect an existing lab without changing its configuration. Use the addresses and SSH key from your own setup if they differ.
-
-**On the physical host**, from the repository root:
-
-```sh
-virsh -c qemu:///system --readonly list --all
-```
-
-You should see `zabbix-server` and `linux-target`. If a VM is stopped, start it in virt-manager. Do not create it again. Connect to the target:
-
-```sh
-ssh -i credentials/noc-lab_ed25519 -o UserKnownHostsFile=credentials/known_hosts noc@192.168.77.20
-```
-
-On first connection, verify the displayed host-key fingerprint against the guest's console before accepting it. Keep host-key checking enabled.
-
-**Inside linux-target**:
-
-```sh
-hostname
-ip -br address
-ping -c 3 192.168.77.10
-cloud-init status --long
-```
-
-For this lab, expect hostname `linux-target`, address `192.168.77.20`, replies from the server and completed cloud-init. A ping proves network reachability; it does not prove Zabbix is installed or healthy. Use `exit` to return to the physical host.
-
-Once you can identify which machine you are using and explain these results, move to step 2: install the monitoring stack in small, checked steps.
+Work in small steps: understand the purpose, choose a setting, apply it and inspect the result. The optional creation script is for a fresh baseline; it is not an update tool for existing VMs.

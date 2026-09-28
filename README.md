@@ -1,60 +1,41 @@
 # 📡 NOC Monitoring Lab — Zabbix
 
-A practical monitoring portfolio built around one workflow: **detect a fault, investigate the cause, restore service and verify recovery**.
+A small monitoring lab built around one workflow: **detect a fault, investigate, restore service and verify recovery**.
 
-The lab uses two Linux virtual machines to explore host availability, HTTP service health and CPU monitoring. Each fault exercise will record the observed problem and recovery times.
+Two Ubuntu virtual machines provide a practical environment for learning host, HTTP service and CPU monitoring with Zabbix.
 
-> **Work in progress:** both Ubuntu guests were running at the 2026-09-27 baseline check. Boot, SSH, guest-to-guest connectivity, DNS and package repository access are verified. Zabbix deployment and fault exercises are next. See the [verified results and test limits](docs/VALIDATION.md).
+> **In progress:** the Ubuntu guest baseline has been verified. Zabbix, the dashboard and fault/recovery exercises are not implemented yet. See [tested scope](docs/VALIDATION.md).
 
-## New here?
+## How it works
 
-Start with **[How the lab works and what to do next](docs/GUIDE.md)**: a plain-English explanation, the roadmap, settings you can change and a first hands-on session.
+The intended setup uses one VM as a monitoring server and the other as a target. Zabbix will collect measurements, evaluate alert conditions and show problem/recovery events in its web interface.
 
-The short version: one VM will watch the other. You will deliberately stop a service or create a small fault on the target, then use Zabbix to observe the problem and its recovery. **The VMs are ready; monitoring is still to be built.**
+[![Lab design: a browser connects to the Zabbix server at 192.168.77.10, which monitors a Linux target at 192.168.77.20](docs/topology.png)](docs/topology.png)
 
-## Lab overview
+*Design and guest baseline · Monitoring connections are planned · [Editable SVG](docs/topology.svg)*
 
-Planned monitoring flow on the configured `noc-lab` NAT network:
+| Component | Role |
+|---|---|
+| QEMU/KVM + libvirt | Run and manage the two VMs |
+| Ubuntu Server 24.04 LTS | Guest operating systems |
+| Zabbix 7.0 LTS | Planned monitoring server, agent and dashboard |
+| Small HTTP service | Planned service to monitor and deliberately interrupt |
 
-[![Planned monitoring flow: host browser to Zabbix server at 192.168.77.10, then agent and HTTP checks to the Linux target at 192.168.77.20](docs/topology.png)](docs/topology.png)
+## Fault exercises
 
-*Logical design · [Editable SVG](docs/topology.svg) · [Verified scope](docs/VALIDATION.md)*
+| Scenario | What the exercise will demonstrate |
+|---|---|
+| HTTP service stopped | Detect a service outage while the target remains reachable |
+| Target VM shut down | Detect host unavailability and confirm recovery after boot |
+| Bounded CPU load | Detect sustained resource pressure and its recovery |
 
-| Layer | Technology | State |
-|---|---|---|
-| Virtualization | QEMU/KVM, libvirt, virt-manager | Installed; KVM lifecycle verified |
-| Guest systems | Ubuntu Server 24.04.5 LTS | Running; baseline connectivity verified |
-| Monitoring | Zabbix 7.0 LTS, Linux agent and HTTP service | Planned |
+These exercises are planned. The intended deliverables are a useful dashboard, measured detection/recovery times, reusable monitoring exports and short recovery runbooks. Initial notifications stay in the local dashboard.
 
-The starting guest budget is **3 vCPUs and 5 GiB RAM in total**. Resource allocations, addresses and setup commands are documented in the [build guide](docs/LAB.md).
+## Explore
 
-## 🔎 Fault exercises
+- **[Understand the lab](docs/GUIDE.md)** — components, monitoring concepts and learning order.
+- **[Setup and file locations](docs/LAB.md)** — VM sizing, networking, Ubuntu image source, and what is installed on the host versus inside the project or guests.
+- **[Validation](docs/VALIDATION.md)** — observed results and test limits.
+- **Reusable baseline:** [network XML](configs/libvirt/noc-lab.xml), [cloud-init template](configs/cloud-init/user-data.example) and [optional guest creation script](scripts/create-guests.py).
 
-All three exercises are **planned, not yet tested**. Faults will run inside the disposable target VM.
-
-| Scenario | Fault | What to verify |
-|---|---|---|
-| MON-01 · Service outage | Stop the HTTP service | A service problem appears while the host remains reachable; restarting the service clears it. |
-| MON-02 · Host unavailable | Shut down the target VM | Host availability fails; check dependent alert suppression and recovery after boot. |
-| MON-03 · CPU pressure | Run a bounded CPU load | Sustained load triggers an alert; ending the load produces a recovery event. |
-
-The intended result is a small dashboard, measured detection and recovery timings, reusable configuration exports and short troubleshooting runbooks. Initial alerts will be local dashboard events.
-
-## ✅ Progress
-
-- [x] Inspect host capacity and hardware virtualization.
-- [x] Prepare and check KVM, the lab network and storage.
-- [x] Create both guests and verify connectivity.
-- [ ] Install Zabbix and collect the first target metric.
-- [ ] Configure monitoring, triggers and a dashboard.
-- [ ] Reproduce all three faults and document recovery.
-
-## Explore the project
-
-- **[Learning guide and roadmap](docs/GUIDE.md)** — understand the components, choose settings and work through the lab by hand.
-- **[Build guide](docs/LAB.md)** — VM roles, network settings and steps to reproduce the guest baseline.
-- **[Validation results](docs/VALIDATION.md)** — directly observed checks and what remains untested.
-- **[Network configuration](configs/libvirt/noc-lab.xml)** — reusable libvirt NAT network and DHCP reservations.
-- **[Optional guest creation script](scripts/create-guests.py)** — creates a fresh guest baseline using a pinned image and a [cloud-init template](configs/cloud-init/user-data.example); it does not install monitoring.
-
-To reproduce the setup, read the learning guide first, then follow the build guide with a subnet and resource budget suitable for your own host. VM images, credentials and generated local files are excluded from this repository.
+VM images, backups, credentials and personal working notes stay outside Git. The repository contains documentation, reusable configuration and recorded evidence.
