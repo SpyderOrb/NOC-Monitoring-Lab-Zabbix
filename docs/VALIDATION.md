@@ -14,8 +14,4 @@ Both guests were created from the authenticated Ubuntu release image build `2026
 
 Not yet tested: Zabbix server/agent, HTTP service, dashboard, fault/recovery scenarios, or guest restart persistence. Guest agent refers to QEMU guest agent, not the Zabbix agent. The baseline is an idle guest observation, not a load or capacity test.
 
-## Earlier infrastructure check — 2026-09-22
-
-Before creating the guests, KVM access, a temporary paused VM lifecycle, the lab network/DNS and the storage pool were checked. Those checks did not boot a guest OS. The guest results above are the more useful baseline for continuing the project.
-
-The network XML also passed schema validation. Local credentials, VM images and workspace notes are excluded from Git.
+The network XML passed schema validation. Detailed workstation setup and personal learning logs are kept outside this repository.
