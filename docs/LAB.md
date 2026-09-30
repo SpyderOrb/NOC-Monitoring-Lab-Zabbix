@@ -33,6 +33,19 @@ Physical host: virtualization packages, service and network rules
   Guest disk: Ubuntu filesystem, guest packages and application data
 ```
 
+### Access to project-local disks
+
+With `qemu:///system`, the VM process uses a service account rather than your desktop login. A private home directory can therefore block access even when the disk path is correct.
+
+Before creating a pool in the project:
+
+- Identify the QEMU service account and save the original directory permissions.
+- Grant that account directory traversal through the required parent directories and access to the dedicated `vms/` directory. An ACL can grant access to one account without opening the directory to everyone.
+- Keep `credentials/` and backups private; do not apply recursive permission changes to the entire project or home directory.
+- Verify access as the service account, then recheck disk ownership and permissions after libvirt creates the first volume.
+
+The pool definition is still system-managed; only its data directory is project-local. Pool autostart makes storage available when libvirt starts—it does not automatically start guests. Guest autostart is a separate setting.
+
 ## Where Ubuntu comes from
 
 The baseline uses an official **Ubuntu Server cloud image from Canonical**, build `20260926`, named `ubuntu-24.04-server-cloudimg-amd64.img`:
