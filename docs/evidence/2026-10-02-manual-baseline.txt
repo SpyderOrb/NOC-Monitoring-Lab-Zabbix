@@ -1,0 +1,42 @@
+Manual Ubuntu baseline — 2026-10-02
+
+Evidence source: operator-provided virt-manager, guest-console and SSH output.
+This is a sanitized observation summary, not an automated test transcript.
+
+MEDIA
+  ubuntu-24.04.5-live-server-amd64.iso, observed size 3.80 GiB
+  SHA256: 97f3d7ffb032c3eb3b23d2c8be9cc76e60c2c1f2c0146ba5ba9fe01cafae0fd8
+  sha256sum check: OK
+  Manifest signature: Good signature, Ubuntu CD Image Automatic Signing Key (2012)
+  Signing fingerprint: 843938DF228D22F7B3742BC0D94AA3F0EFE21092
+
+GUESTS
+  zabbix-server: 2 vCPU, 4096 MiB RAM, 25 GiB qcow2 capacity
+  linux-target: 1 vCPU, 2048 MiB RAM, 16 GiB disk capacity
+  Disk locations: <project>/vms/{guest-name}.qcow2
+  Both: Ubuntu 24.04.5 LTS, Linux 6.8.0-146-generic, KVM
+  Installer layouts: BIOS GRUB partition plus ext4 root, no LVM
+
+NETWORK
+  noc-lab: NAT, 192.168.77.0/24, gateway 192.168.77.1
+  Dynamic DHCP range: 192.168.77.100–192.168.77.199
+  Host reservations observed in both live and persistent XML
+  Server after restart: enp1s0 UP 192.168.77.10/24, default via .1
+  Target after restart: enp1s0 UP 192.168.77.20/24, default via .1
+
+ACCESS AND MAINTENANCE
+  Both SSH sockets initially active/listening on port 22
+  Explicit key-only login commands assigned; returned guest sessions showed
+  expected hostname and user noc. Not an independently captured SSH auth trace.
+  Project-local SSH aliases tested; effective client configuration inspected.
+  Password authentication has not been disabled.
+  APT update/upgrade completed on each guest.
+  Post-update checks on both: zero failed units, dpkg --audit no findings,
+  reserved address retained, SSH session working after instructed restart.
+
+LIMITS
+  Inter-guest ICMP tests assigned, outputs not yet received.
+  No new-build QEMU agent or NTP acceptance result recorded.
+  No physical-host reboot acceptance test.
+  No Zabbix, target HTTP service, dashboard or fault experiments yet.
+  No workload benchmark or exhaustive connectivity test.

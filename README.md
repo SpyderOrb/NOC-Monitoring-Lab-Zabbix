@@ -4,7 +4,7 @@ A small monitoring lab built around one workflow: **detect a fault, investigate,
 
 Two Ubuntu virtual machines provide a practical environment for learning host, HTTP service and CPU monitoring with Zabbix.
 
-> **In progress:** the Ubuntu guest baseline has been verified. Zabbix, the dashboard and fault/recovery exercises are not implemented yet. See [tested scope](docs/VALIDATION.md).
+> **In progress:** both Ubuntu VMs are manually installed, updated and accessible over SSH. Inter-VM connectivity checks are pending. Zabbix, the dashboard and fault/recovery exercises are not implemented yet. See [tested scope](docs/VALIDATION.md).
 
 ## How it works
 
@@ -36,6 +36,6 @@ These exercises are planned. The intended deliverables are a useful dashboard, m
 - **[Understand the lab](docs/GUIDE.md)** — components, monitoring concepts and learning order.
 - **[Setup and file locations](docs/LAB.md)** — VM sizing, networking, Ubuntu image source, and what is installed on the host versus inside the project or guests.
 - **[Validation](docs/VALIDATION.md)** — observed results and test limits.
-- **Reusable baseline:** [network XML](configs/libvirt/noc-lab.xml), [cloud-init template](configs/cloud-init/user-data.example) and [optional guest creation script](scripts/create-guests.py).
+- **Historical cloud-image examples:** [network XML](configs/libvirt/noc-lab.xml), [cloud-init template](configs/cloud-init/user-data.example) and [optional guest creation script](scripts/create-guests.py).
 
 VM images, backups, credentials and personal working notes stay outside Git. The repository contains documentation, reusable configuration and recorded evidence.
