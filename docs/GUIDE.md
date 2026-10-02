@@ -11,6 +11,7 @@ This page describes the intended workflow. [Validation](VALIDATION.md) distingui
 | Physical computer | Runs the virtual machines. Fault experiments happen inside the target VM. |
 | `zabbix-server` | Will collect measurements, store them in a database and serve the web interface. |
 | `linux-target` | Will run the monitored agent and HTTP service. This is where faults are introduced. |
+| `noc-lab` storage pool | Registers the project `vms/` folder containing separate guest disks; it is not a VM. |
 | `noc-lab` network | Connects the VMs and provides outbound access through NAT. |
 | Browser | Will display Zabbix measurements, graphs and problems. |
 
@@ -45,4 +46,4 @@ For every fault, record when it started, when Zabbix detected it, when service w
 - **Initial guest settings:** review the [cloud-init template](../configs/cloud-init/user-data.example) if using the cloud-image method. It applies during initial setup, not every time the file is edited.
 - **Monitoring:** once installed, choose items, polling intervals, thresholds and dashboard widgets in Zabbix.
 
-Work in small steps: understand the purpose, choose a setting, apply it and inspect the result. The optional creation script is for a fresh baseline; it is not an update tool for existing VMs.
+Work in small steps: understand the purpose, choose a setting, apply it and inspect the result. The current learning path uses virt-manager and the Ubuntu installer. The optional creation script records an earlier cloud-image build; its settings differ from the manual setup and it must not be run over existing guests.

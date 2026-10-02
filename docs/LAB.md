@@ -1,111 +1,61 @@
 # Setup and file locations
 
-This guide describes the reproducible Ubuntu guest baseline. **Monitoring setup is in progress:** Zabbix and the fault exercises are not included in the creation script. See [validation](VALIDATION.md) for tested scope.
+The main learning path is a manual Ubuntu installation through **virt-manager**. Set up the host, create storage and networking, install each guest, then verify SSH and package health before adding monitoring. See [validation](VALIDATION.md) for observed results and remaining checks.
 
 ## Lab layout
 
 | VM | vCPU | RAM | Virtual disk capacity | Reserved IPv4 |
 |---|---:|---:|---:|---|
-| zabbix-server | 2 | 4 GiB | 24 GiB | 192.168.77.10 |
-| linux-target | 1 | 1 GiB | 12 GiB | 192.168.77.20 |
+| zabbix-server | 2 | 4 GiB | 25 GiB | 192.168.77.10 |
+| linux-target | 1 | 2 GiB | 16 GiB | 192.168.77.20 |
 
-Both guests use Ubuntu Server 24.04 LTS, UEFI and virtio devices. These are small-lab starting allocations; reassess them after installing services. Sparse qcow2 disks grow with use, so virtual capacity is different from space occupied on the physical disk. Backups need additional space.
+Both manually installed guests run Ubuntu Server 24.04.5 LTS with virtio devices and BIOS boot. Each has a small GRUB boot partition and an ext4 root partition, without LVM or guest disk encryption. These are starting allocations, not measured monitoring capacity requirements. Sparse qcow2 files grow with use; virtual capacity is not their physical disk usage.
 
-The [network definition](../configs/libvirt/noc-lab.xml) creates `noc-lab`: subnet `192.168.77.0/24`, gateway `192.168.77.1`, bridge `virbr-noc`, DNS domain `noc.test`, dynamic DHCP range `.100`–`.199` and reserved guest addresses `.10`/`.20`. NAT permits guest-initiated access to the internet and LAN; it is not full isolation from the LAN. Choose a different subnet if it overlaps your network or VPN.
+## What is installed where?
 
-## Installation scope and file locations
+`<project>` means the repository directory. Running an installer from that directory does not make its installation local.
 
-`<project>` means the repository directory. Running a command there does not make its installation local.
-
-| Location | What lives there | Concrete example |
+| Scope | Contents and installation method | Location |
 |---|---|---|
-| **Physical host — system packages** | QEMU/KVM, libvirt, virt-manager, virt-install, dnsmasq, UEFI firmware and dependencies, installed through the host package manager | `virt-manager` launches from `/usr/bin/virt-manager`; QEMU from `/usr/bin/qemu-system-x86_64`. Paths vary by distribution. |
-| **Physical host — system configuration** | libvirt services, registered definitions, network/firewall rules and per-VM firmware state | Configuration under `/etc/libvirt`; state under `/var/lib/libvirt`; UEFI variables under `/var/lib/libvirt/qemu/nvram`. |
-| **Project — reusable files** | Network XML, guest template and helper script | `configs/libvirt/noc-lab.xml` is a source file; registering it creates a separate libvirt-managed network. |
-| **Project — private local files** | Downloaded media, SSH keys and backups; excluded from Git | `images/`, `credentials/`, `backups/`. These are data files, not host-installed applications. |
-| **Guest disks** | Ubuntu and its installed packages; future Zabbix/database/HTTP packages live inside the guests | The documented script stores qcow2 files in `/var/lib/libvirt/images/noc-lab/`. |
+| **Host: system packages** | QEMU/KVM, libvirt, virt-manager and supporting tools, installed through the host package manager | Executables under `/usr/bin`; package files elsewhere in the host filesystem |
+| **Host: system configuration** | libvirt VM, pool and network definitions; scoped firewall rules | Definitions under `/etc/libvirt`, runtime state under `/var/lib/libvirt`; firewall configuration belongs to the host |
+| **Project: installation media** | Ubuntu Server ISO and downloaded checksum/signature files | `images/ubuntu-24.04.5/`; ISO observed as 3.80 GiB |
+| **Project: guest disks** | Independent qcow2 volumes created in virt-manager | `vms/zabbix-server.qcow2` and `vms/linux-target.qcow2`; capacities 25 and 16 GiB |
+| **Project: private access files** | Client SSH key, known-host records and client configuration | `credentials/`, excluded from Git |
+| **Project: backups** | Preserved disks/configuration and future backups | `backups/`, excluded from Git; allow additional storage |
+| **Host: user directory** | `ssh-copy-id` uses temporary working files here | `~/.ssh/`; lab keys and known-host records remain in the project |
+| **Inside each guest** | Ubuntu packages and OpenSSH, installed through the Ubuntu installer and APT | Guest `/usr`, `/etc`, `/var`; physically backed by that guest's qcow2 file |
+| **Inside each guest: SSH access** | Public client key installed with `ssh-copy-id` | Guest user's `~/.ssh/authorized_keys`; private key stays on the host |
 
-**Project-local guest storage is planned:** a pool targeting `<project>/vms/`. The current script still uses the system path above. Moving the disks requires updating libvirt and verifying QEMU access to the new directory; it does not move system services or network rules into the project. See [libvirt file access](https://libvirt.org/drvqemu.html#security-infrastructure).
+Zabbix, its database, the target agent and HTTP service will also be installed **inside the guests**. They are not installed yet. No workstation inventory or total host package-size estimate is published; those figures depend on the host and shared dependencies.
 
-```text
-Physical host: virtualization packages, service and network rules
-  Project: configuration sources, installation media, keys and backups
-  Guest disk: Ubuntu filesystem, guest packages and application data
-```
+## Storage and networking are separate
 
-### Access to project-local disks
+The **`noc-lab` storage pool** registers `<project>/vms/` with libvirt. It is a folder of disks, not another VM. The **`noc-lab` network** connects guest network cards. Sharing a name does not connect these objects automatically: select both explicitly when creating a VM.
 
-With `qemu:///system`, the VM process uses a service account rather than your desktop login. A private home directory can therefore block access even when the disk path is correct.
+The manual network uses `192.168.77.0/24`, gateway `192.168.77.1`, NAT, DHCP range `.100`–`.199` and DNS domain `noc-lab`. Its observed host bridge is `virbr1`; generated bridge names can differ on another computer. DHCP reservations associate each guest's actual MAC address with `.10` or `.20`. Ubuntu continues to use DHCP.
 
-Before creating a pool in the project:
+Choose a non-overlapping subnet. NAT allows guest-initiated access to the internet and LAN; it is not complete isolation from the LAN. If the host firewall blocks traffic, permit DHCP/DNS and outbound forwarding only for the actual lab bridge/subnet and host uplink. Keep the firewall enabled.
 
-- Identify the QEMU service account and save the original directory permissions.
-- Grant that account directory traversal through the required parent directories and access to the dedicated `vms/` directory. An ACL can grant access to one account without opening the directory to everyone.
-- Keep `credentials/` and backups private; do not apply recursive permission changes to the entire project or home directory.
-- Verify access as the service account, then recheck disk ownership and permissions after libvirt creates the first volume.
+With `qemu:///system`, QEMU runs under a service account. Check its identity and save existing permissions before granting narrow directory traversal and access to `vms/` and installation media. Do not grant recursive access to the entire home directory, credentials or backups. Verify access as the service account. See [libvirt file access](https://libvirt.org/drvqemu.html#security-infrastructure).
 
-The pool definition is still system-managed; only its data directory is project-local. Pool autostart makes storage available when libvirt starts—it does not automatically start guests. Guest autostart is a separate setting.
+Pool/network autostart makes those resources available when libvirt starts. Guest autostart is a separate choice.
 
-## Where Ubuntu comes from
+## Manual build sequence
 
-The baseline uses an official **Ubuntu Server cloud image from Canonical**, build `20260926`, named `ubuntu-24.04-server-cloudimg-amd64.img`:
+1. **Prepare the host.** Check virtualization support, available resources and existing networks. Install the host virtualization tools and enable the required libvirt services for your distribution.
+2. **Create project storage and the NAT network.** Register a directory pool targeting `<project>/vms/`; check QEMU access. Create the network described above and review scoped firewall allowances.
+3. **Obtain and verify Ubuntu.** The observed installer is `ubuntu-24.04.5-live-server-amd64.iso` from [Ubuntu releases](https://releases.ubuntu.com/24.04/). Download its checksum list and signature alongside it. Follow [Ubuntu's verification procedure](https://ubuntu.com/tutorials/how-to-verify-ubuntu): authenticate the manifest and verify the ISO hash. A cloud image is a preinstalled disk and does not provide this interactive installation path.
+4. **Create each VM in virt-manager.** Choose local ISO installation, the allocations above, a separate sparse qcow2 volume in `noc-lab` storage, and the `noc-lab` NAT network. Never share the same writable guest disk between these VMs.
+5. **Install Ubuntu.** Choose standard Ubuntu Server, a suitable keyboard, automatic DHCP, no proxy unless your network requires one, and a working package mirror. Review the selected virtual disk before formatting. Set the appropriate hostname and a local administrator account. Enable OpenSSH with initial password access; skip Ubuntu Pro attachment and optional featured snaps for this lab.
+6. **Boot from the installed disk.** Eject virtual installation media if requested; retain the ISO file. Check hostname, interface address, default route and SSH service/socket state. An active SSH socket can start an otherwise inactive SSH service on demand.
+7. **Reserve addresses and configure SSH.** Check actual guest MACs and existing leases before adding DHCP reservations to both live and persistent network configuration. Reacquire the guest lease and verify the address. Compare the server's public host-key fingerprint from its console before trusting the first SSH connection. Create a project-local client key, copy only its public half to each guest, and test key-only login before considering any password-login changes.
+8. **Update and inspect each guest.** Run `sudo apt update`, review `apt list --upgradable`, then `sudo apt upgrade`. Reboot when appropriate and verify `systemctl --failed --no-pager`, `sudo dpkg --audit` and guest addressing. Finally test connectivity between the guests before configuring monitoring.
 
-[Official release image and checksum files](https://cloud-images.ubuntu.com/releases/noble/release-20260926/)
+The local SSH client file is invoked from the project root using `ssh -F credentials/ssh_config.manual zabbix-server` or `linux-target`. Its relative key/known-host paths rely on that working directory. Private access files are intentionally not shipped in this repository.
 
-A cloud image is an already installed base OS designed to boot in a VM. It differs from an installer ISO, which walks you through installing Ubuntu onto an empty disk. The image was copied into two independent disks; cloud-init supplied the initial user, SSH access and guest settings. The signed checksum manifest and image digest were verified before use.
+## Configuration choices and historical automation
 
-Ubuntu images are not committed to this repository. Exact image hash, observed guest version and test results are in [the baseline evidence](evidence/2026-09-27-guest-baseline.txt).
+You control VM sizing, disk capacity, subnet, guest accounts and authentication. Shut down a guest before changing persistent resource settings where required; keep reservations consistent with guest MACs. Monitoring intervals, thresholds and dashboards will be chosen during the monitoring stage.
 
-## Reproduce the cloud-image baseline
-
-This is an optional automated path for a **fresh lab**, using the system storage path above. It is not a manual ISO walkthrough and does not modify existing guests. Read the script and template before running them.
-
-Prerequisites: a Linux host with KVM support; QEMU/libvirt, virt-install, UEFI firmware, dnsmasq and Python libvirt bindings. Prepare the host using your distribution's instructions. The helper requires at least **7 GiB available RAM and 45 GiB free disk**; these are its fixed checks, not a complete capacity estimate.
-
-<details>
-<summary>Network, storage and first-boot commands</summary>
-
-Run on the physical host, from the project root. Inspect existing networks/routes first. Do not recreate an existing `noc-lab` network or pool.
-
-```sh
-sudo virsh -c qemu:///system net-define configs/libvirt/noc-lab.xml
-sudo virsh -c qemu:///system net-start noc-lab
-sudo virsh -c qemu:///system net-autostart noc-lab
-sudo install -d -m 0755 /var/lib/libvirt/images/noc-lab
-sudo virsh -c qemu:///system pool-define-as noc-lab dir --target /var/lib/libvirt/images/noc-lab
-sudo virsh -c qemu:///system pool-start noc-lab
-sudo virsh -c qemu:///system pool-autostart noc-lab
-```
-
-If the host firewall blocks guest traffic, configure scoped DHCP, DNS and outbound forwarding allowances for your actual lab interface and uplink. Keep the firewall enabled. Network/pool autostart does not start the guests; guest autostart is disabled in this baseline.
-
-1. Obtain `ubuntu-24.04-server-cloudimg-amd64.img`, `SHA256SUMS` and `SHA256SUMS.gpg` from the [official release build 20260926](https://cloud-images.ubuntu.com/releases/noble/release-20260926/). Use the released build, not the moving daily image URL.
-2. Follow [Canonical's signature verification procedure](https://ubuntu.com/docs/public-images/public-images-how-to/verify-image-checksum/). The verified signing fingerprint is `D2EB44626FDDC30B513D5BB71A5D6C4C7DB87C81`. Then check the image against the authenticated manifest. The expected SHA256 is:
-
-   ```text
-   6a81c37564db9b1ee84e141922625e1d7c5b389b99bb3c572e0243607d5bb4d2
-   ```
-
-3. Prepare a dedicated SSH key and run [the provisioner](../scripts/create-guests.py) from the repository root. These are first-creation commands; keep any existing key and guests instead of replacing them:
-
-   ```sh
-   install -d -m 700 credentials
-   ssh-keygen -t ed25519 -N '' -C noc-lab-admin -f credentials/noc-lab_ed25519
-   sudo python3 scripts/create-guests.py \
-     images/ubuntu-24.04-20260926/ubuntu-24.04-server-cloudimg-amd64.img \
-     credentials/noc-lab_ed25519.pub
-   ```
-
-The provisioner checks the pinned image hash, available resources and DHCP reservations, and refuses existing guest names, disks or rendered configuration. It requires the prepared `noc-lab` network/pool and the host's libvirt Python bindings. It creates independent disks, injects [cloud-init user data](../configs/cloud-init/user-data.example) and boots both guests. Partial failures leave state for inspection; the script does not delete or recreate existing guests automatically.
-
-Cloud-init creates the `noc` administrator, disables SSH password login, generates distinct host keys, sets UTC, installs QEMU guest agent and updates APT metadata. Passwordless sudo is limited to the lab's administrator account inside each guest. Rendered data and keys stay excluded from Git. Guest initialization completed without errors in this build.
-
-Connect with the project key, for example `ssh -i credentials/noc-lab_ed25519 -o UserKnownHostsFile=credentials/known_hosts noc@192.168.77.10` (target: `.20`). Confirm the first host key, retain it and do not disable host-key checking. After a physical-host restart, start each guest using `sudo virsh -c qemu:///system start zabbix-server` and `sudo virsh -c qemu:///system start linux-target`.
-
-</details>
-
-## What you can change
-
-The script's `GUESTS` entries specify memory, CPUs, disk capacity, MAC and reserved IP. Keep MAC/IP settings consistent with the network XML and review the fixed resource checks when changing allocations. The pool path and image checksum are also fixed in the script. The cloud-init template controls initial guest settings; editing it does not update an already created VM.
-
-For an existing guest, use virt-manager and SSH. Check baseline connectivity before adding monitoring, and keep credentials and generated files outside Git.
+The existing [creation script](../scripts/create-guests.py), [cloud-init template](../configs/cloud-init/user-data.example) and [network XML](../configs/libvirt/noc-lab.xml) belong to the earlier **cloud-image baseline**. They use different allocations, UEFI, a system disk pool and fixed MAC/network settings. They are historical examples, not an installer or update command for the manual setup. Do not run them over these guests. The [historical evidence](evidence/2026-09-27-guest-baseline.txt) records that separate build.
