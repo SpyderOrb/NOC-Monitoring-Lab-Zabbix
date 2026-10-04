@@ -35,8 +35,13 @@ ACCESS AND MAINTENANCE
   reserved address retained, SSH session working after instructed restart.
 
 LIMITS
-  Inter-guest ICMP tests assigned, outputs not yet received.
+  Inter-guest ICMP follow-up passed on 2026-10-03 (details below).
   No new-build QEMU agent or NTP acceptance result recorded.
   No physical-host reboot acceptance test.
   No Zabbix, target HTTP service, dashboard or fault experiments yet.
   No workload benchmark or exhaustive connectivity test.
+
+FOLLOW-UP — 2026-10-03, operator-provided SSH output
+  Server -> target: 3 transmitted/3 received, 0% loss, mean RTT 0.599 ms
+  Target -> server: 3 transmitted/3 received, 0% loss, mean RTT 0.634 ms
+  These small ICMP samples are not a performance benchmark or service test.

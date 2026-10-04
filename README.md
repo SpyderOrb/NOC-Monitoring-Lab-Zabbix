@@ -4,21 +4,21 @@ A small monitoring lab built around one workflow: **detect a fault, investigate,
 
 Two Ubuntu virtual machines provide a practical environment for learning host, HTTP service and CPU monitoring with Zabbix.
 
-> **In progress:** both Ubuntu VMs are manually installed, updated and accessible over SSH. Inter-VM connectivity checks are pending. Zabbix, the dashboard and fault/recovery exercises are not implemented yet. See [tested scope](docs/VALIDATION.md).
+> **In progress:** Zabbix 7.0.31 is running with PostgreSQL and Nginx. Live CPU and memory values are verified on both Ubuntu VMs, with filesystem data also verified on the server. HTTP monitoring, the custom dashboard and fault/recovery exercises are next. See [tested scope and known limitations](docs/VALIDATION.md).
 
 ## How it works
 
-The intended setup uses one VM as a monitoring server and the other as a target. Zabbix will collect measurements, evaluate alert conditions and show problem/recovery events in its web interface.
+One VM runs the monitoring server and the other is the target. Zabbix collects host measurements through Agent 2. The planned fault exercises will demonstrate alert conditions and problem/recovery events in the web interface.
 
 [![Lab design: a browser connects to the Zabbix server at 192.168.77.10, which monitors a Linux target at 192.168.77.20](docs/topology.png)](docs/topology.png)
 
-*Design and guest baseline · Monitoring connections are planned · [Editable SVG](docs/topology.svg)*
+*Lab design · CPU and memory collection verified on both guests · [Editable SVG](docs/topology.svg)*
 
 | Component | Role |
 |---|---|
 | QEMU/KVM + libvirt | Run and manage the two VMs |
 | Ubuntu Server 24.04 LTS | Guest operating systems |
-| Zabbix 7.0 LTS | Planned monitoring server, agent and dashboard |
+| Zabbix 7.0 LTS | Server self-monitoring and initial target collection; custom dashboard pending |
 | Small HTTP service | Planned service to monitor and deliberately interrupt |
 
 ## Fault exercises

@@ -27,7 +27,7 @@ Both manually installed guests run Ubuntu Server 24.04.5 LTS with virtio devices
 | **Inside each guest** | Ubuntu packages and OpenSSH, installed through the Ubuntu installer and APT | Guest `/usr`, `/etc`, `/var`; physically backed by that guest's qcow2 file |
 | **Inside each guest: SSH access** | Public client key installed with `ssh-copy-id` | Guest user's `~/.ssh/authorized_keys`; private key stays on the host |
 
-Zabbix, its database, the target agent and HTTP service will also be installed **inside the guests**. They are not installed yet. No workstation inventory or total host package-size estimate is published; those figures depend on the host and shared dependencies.
+Zabbix 7.0.31, PostgreSQL 16, Nginx and PHP 8.3 FPM are installed **inside the server guest**, with server self-monitoring verified in the frontend. Agent 2 version 7.0.31 is installed inside the target guest, with CPU and memory values visible through passive polling. The target HTTP service remains pending. No workstation inventory or total host package-size estimate is published; those figures depend on the host and shared dependencies.
 
 ## Storage and networking are separate
 
