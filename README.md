@@ -4,11 +4,11 @@ A small monitoring lab built around one workflow: **detect a fault, investigate,
 
 Two Ubuntu virtual machines provide a practical environment for learning host, HTTP service and CPU monitoring with Zabbix.
 
-> **In progress:** Zabbix 7.0.31 is running with PostgreSQL and Nginx. Live CPU and memory values are verified on both Ubuntu VMs, with filesystem data also verified on the server. HTTP monitoring, the custom dashboard and fault/recovery exercises are next. See [tested scope and known limitations](docs/VALIDATION.md).
+> **In progress:** Zabbix 7.0.31 collects live CPU, memory and root-filesystem metrics from two Ubuntu VMs. All three fault exercises demonstrated automatic problem and recovery events in one trial each. The custom dashboard and reusable monitoring exports remain pending. See [tested scope and known limitations](docs/VALIDATION.md).
 
 ## How it works
 
-One VM runs the monitoring server and the other is the target. Zabbix collects host measurements through Agent 2. The planned fault exercises will demonstrate alert conditions and problem/recovery events in the web interface.
+One VM runs the monitoring server and the other is the target. Zabbix collects host measurements through Agent 2. HTTP service, VM shutdown and CPU load exercises have demonstrated automatic problem and recovery events in the web interface.
 
 [![Lab design: a browser connects to the Zabbix server at 192.168.77.10, which monitors a Linux target at 192.168.77.20](docs/topology.png)](docs/topology.png)
 
@@ -19,17 +19,17 @@ One VM runs the monitoring server and the other is the target. Zabbix collects h
 | QEMU/KVM + libvirt | Run and manage the two VMs |
 | Ubuntu Server 24.04 LTS | Guest operating systems |
 | Zabbix 7.0 LTS | Server self-monitoring and initial target collection; custom dashboard pending |
-| Small HTTP service | Planned service to monitor and deliberately interrupt |
+| Target Nginx service | HTTP status/content monitoring and tested stop/recovery |
 
 ## Fault exercises
 
-| Scenario | What the exercise will demonstrate |
+| Scenario | Scope and result |
 |---|---|
-| HTTP service stopped | Detect a service outage while the target remains reachable |
-| Target VM shut down | Detect host unavailability and confirm recovery after boot |
-| Bounded CPU load | Detect sustained resource pressure and its recovery |
+| HTTP service stopped | Passed: detected failure and automatic recovery; [runbook](runbooks/MON-01-http-service.md) |
+| Target VM shut down | Passed: agent and HTTP problems automatically resolved after boot; [runbook](runbooks/MON-02-vm-outage.md) |
+| Bounded CPU load | Passed: 100% CPU observed, warning and automatic recovery; [runbook](runbooks/MON-03-cpu-load.md) |
 
-These exercises are planned. The intended deliverables are a useful dashboard, measured detection/recovery times, reusable monitoring exports and short recovery runbooks. Initial notifications stay in the local dashboard.
+The remaining deliverables are a useful dashboard and reusable monitoring exports. Initial notifications stay in the local dashboard.
 
 ## Explore
 
