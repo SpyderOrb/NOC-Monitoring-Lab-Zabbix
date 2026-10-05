@@ -1,0 +1,44 @@
+MON-01: target HTTP service stop and recovery
+Date: 2026-10-05
+Evidence source: operator-provided terminal and Zabbix screenshots.
+
+CONFIGURATION
+  Target: linux-target, 192.168.77.20
+  Service: nginx, endpoint /health.txt, expected body NOC-LAB-HTTP-OK
+  Scenario: HTTP health, step Health page
+  Interval: 30s; attempts: 1; timeout: 5s; required HTTP status: 200
+  Trigger: linux-target: HTTP health check failed
+  Expression: last(/linux-target/web.test.fail[HTTP health])>0
+  Severity: Average; enabled and OK before test
+  Tags: component=http, scope=availability
+  Operator reports NTP synchronization yes on both guests;
+  target yes is also visible in terminal evidence.
+
+OBSERVATIONS
+  Healthy baseline: failed step 0, response code 200, response time 1.31ms.
+  STOP command completed: 2026-10-05 16:23:07 UTC.
+  During outage: failed step 1, scenario download speed 0 Bps,
+    last error begins Failed to connect to 192.1... (UI truncation).
+    Response code 200 still displayed from an older successful poll:
+    its age was 58s versus failed-step age 28s.
+  START command completed: 2026-10-05 16:24:24 UTC.
+  Recovered sample: failed step 0, response code 200,
+    response time 1.98ms, all checked 18s earlier.
+    Previous error text remains as older historical value (48s).
+
+EVENT HISTORY
+  UI timezone: Europe/Warsaw (UTC+02:00 on this date).
+  Problem: 18:23:31 local = 16:23:31 UTC.
+  Recovery: 18:24:31 local = 16:24:31 UTC.
+  Status: RESOLVED; severity: Average; displayed duration: 1m.
+  Detection delay from STOP completion: 24 seconds.
+  Recovery delay from START completion: 7 seconds.
+  Recorded problem duration: 60 seconds.
+
+LIMITS
+  One manually executed trial, not a latency guarantee or worst-case bound.
+  Action timestamps record command completion, not exact socket transitions;
+  delays are approximate, with second precision and guest clock uncertainty.
+  77 seconds between command completion marks is not the event duration.
+  Pre-test installed-package-count warning is unrelated to this event.
+  No host outage, CPU fault or external notification tested here.

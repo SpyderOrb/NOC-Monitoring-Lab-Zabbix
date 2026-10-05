@@ -1,0 +1,27 @@
+MON-02: target VM shutdown and recovery
+Date: 2026-10-05
+Source: operator-provided terminal and Zabbix screenshots, not assistant execution.
+Target: linux-target (192.168.77.20); monitoring server remained available.
+
+Agent trigger: max(/linux-target/zabbix[host,agent,available],{$AGENT.TIMEOUT})=0
+Effective AGENT.TIMEOUT: 3m; trigger enabled, Average, OK before test.
+
+UTC timeline (UI Europe/Warsaw timestamps converted from UTC+02:00):
+16:40:42 Shutdown request timestamp; sudo systemctl poweroff; SSH disconnected.
+16:41:04 HTTP problem (UI18:41:04).
+16:44:26 Agent availability problem (UI18:44:26).
+16:44:40 Host terminal START reference before intended virt-manager start click.
+16:45:31 HTTP RESOLVED (UI18:45:31); event duration4m27s.
+16:46:00 Recent-restart warning (uptime <10m), still open in final screenshot.
+16:46:26 Agent availability RESOLVED (UI18:46:26); event duration2m.
+Post-boot: systemctl is-active nginx zabbix-agent2 returned active twice.
+
+Approximate observed delays:
+HTTP detection22s; agent detection224s (3m44s) from shutdown request.
+HTTP recovery51s; agent recovery106s (1m46s) from pre-start reference.
+
+Limits: one trial, second precision, action timestamps are request/reference
+points, not exact power transitions. Recovery includes boot, polling and
+manual click delay. Host/guest clock offset not independently measured.
+Automatic recovery followed the assigned procedure; no manual closure reported.
+Recent-restart warning closure and fresh resource samples not yet captured.

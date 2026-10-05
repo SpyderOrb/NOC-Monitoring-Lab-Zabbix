@@ -1,0 +1,25 @@
+MON-03: bounded target CPU load and recovery
+Date: 2026-10-05
+Source: operator-provided terminal and Zabbix screenshots.
+Guest: linux-target; nproc=1 confirmed.
+Command: timeout --kill-after=5s 8m yes > /dev/null
+No package installation or elevated privileges required.
+Trigger: min(/linux-target/system.cpu.util,5m)>{$CPU.UTIL.CRIT}
+Effective threshold:90; Warning, enabled/OK before test.
+Dependency: Linux: Load average is too high.
+
+UTC timeline (UI Europe/Warsaw UTC+02:00):
+16:50:45 CPU START reference, recorded before separate load command.
+Under load: Latest data100%, last check43s; graph also reaches100%.
+16:57:24 CPU problem (UI18:57:24).
+16:59:02 CPU STOP observed, recorded after load command returned.
+timeout exit code124 confirms timeout expiry.
+16:59:24 CPU RESOLVED (UI18:59:24), duration2m.
+
+Reference-to-event differences:399s detection,22s recovery.
+START/STOP reference span497s; configured timeout480s. Interactive command
+entry gaps mean timestamps are not exact process transition times.
+One trial only, no guaranteed latency. Post-recovery Latest data CPU0.2338%, last check5s.
+Recovery graph shows100% plateau returning to baseline, last0.1838%
+(a separate sample); saved as2026-10-05-cpu-recovery-graph.png.
+Separate recent-restart warning resolved16:55:30UTC (UI18:55:30).
