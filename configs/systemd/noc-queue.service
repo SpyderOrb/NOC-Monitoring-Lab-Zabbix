@@ -1,0 +1,21 @@
+[Unit]
+Description=NOC lab application queue simulator
+
+[Service]
+Type=simple
+User=noc-queue
+Group=noc-queue
+ExecStart=/usr/bin/python3 /opt/noc-queue/noc-queue.py --state-dir /var/lib/noc-queue
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=10s
+StateDirectory=noc-queue
+StateDirectoryMode=0755
+UMask=0022
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

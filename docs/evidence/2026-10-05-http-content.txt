@@ -1,0 +1,23 @@
+MON-04: HTTP200 with an incorrect response body
+Date: 2026-10-05
+Source: operator-provided terminal and Zabbix screenshots.
+Existing HTTP health scenario requires NOC-LAB-HTTP-OK and HTTP200.
+
+Target file changed to NOC-LAB-HTTP-FAIL; Nginx remained reachable.
+Server wget at19:29:23UTC returned HTTP200 with incorrect marker.
+Latest data simultaneously showed fresh HTTP200 and failed step1;
+last error began required pattern (full text truncated in screenshot).
+Problem19:29:01UTC (UI21:29:01 Europe/Warsaw).
+Initial restoration mistakenly wrote the same path on zabbix-server;
+this did not restore the target endpoint.
+Correct restoration to NOC-LAB-HTTP-OK on linux-target confirmed by tee output.
+Automatic RESOLVED19:36:01UTC (UI21:36:01), event duration7m.
+
+Timing limits: CONTENT changed reference19:29:09 and TARGET restored
+reference19:36:06 were separately entered commands AFTER file changes.
+Both references are later than corresponding event timestamps. Do not
+compute detection/recovery latency from them or infer a clock defect.
+The response Last-Modified19:28:57 is supplementary file metadata, not a
+precisely instrumented action boundary. No repeat required.
+Post-recovery direct HTTP fetch/failed-step0 sample not supplied; automatic
+trigger recovery and corrected target file content are confirmed.

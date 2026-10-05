@@ -1,0 +1,35 @@
+zabbix_export:
+  version: '7.0'
+  host_groups:
+    - uuid: dc579cd7a1a34222933f24f52a68bcd8
+      name: 'Linux servers'
+  hosts:
+    - host: linux-target
+      name: linux-target
+      templates:
+        - name: 'Linux by Zabbix agent'
+      groups:
+        - name: 'Linux servers'
+      interfaces:
+        - ip: 192.168.77.20
+          interface_ref: if1
+      httptests:
+        - name: 'HTTP health'
+          delay: 30s
+          steps:
+            - name: 'Health page'
+              url: 'http://192.168.77.20/health.txt'
+              follow_redirects: 'NO'
+              timeout: 5s
+              required: NOC-LAB-HTTP-OK
+              status_codes: '200'
+      inventory_mode: DISABLED
+  triggers:
+    - expression: 'last(/linux-target/web.test.fail[HTTP health])>0'
+      name: 'linux-target: HTTP health check failed'
+      priority: AVERAGE
+      tags:
+        - tag: component
+          value: http
+        - tag: scope
+          value: availability

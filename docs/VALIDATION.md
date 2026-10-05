@@ -29,7 +29,7 @@ Operator output confirms target Agent 2 version 7.0.31, enabled/running with suc
 
 A subsequent October 5 screenshot verifies fresh target root-filesystem samples (all checked 52s earlier): space used **32.6297% / 4.84 GB**, available **9.99 GB**, total **15.64 GB**, free inodes **90.5097%**, read-only flag **0**. These are reported filesystem metrics, not the virtual disk capacity. [Screenshot](evidence/2026-10-05-target-root-filesystem.png).
 
-**Pending:** custom dashboard and reusable configuration exports.
+**Export status:** target host YAML captured and inspected; exact template capture and fresh-instance restoration testing remain pending.
 
 ## Target HTTP endpoint — 2026-10-05
 
@@ -50,6 +50,24 @@ Operator output confirms `nproc=1` and a single `yes` process bounded by `timeou
 The pre-load reference was **16:50:45 UTC**; the CPU problem appeared at **16:57:24 UTC**, **6m39s later**. The operator recorded the post-load timestamp **16:59:02 UTC** and timeout exit code **124**. Automatic recovery occurred at **16:59:24 UTC**, **22s after that timestamp**, with a recorded event duration of 2m. Separate interactive commands introduce gaps around the actual load start/end: the reference timestamps are 8m17s apart, while the configured timeout was 8m. These differences are approximate reference-to-event timings, not exact process-to-event latencies.
 
 The fault/recovery trial passed. A subsequent Latest data screenshot confirms CPU **0.2338%**, checked 5s earlier. The [recovery graph](evidence/2026-10-05-cpu-recovery-graph.png) shows the 100% plateau returning to baseline (graph last value 0.1838%, a separate sample). No repeated load test is required. See [evidence](evidence/2026-10-05-cpu-load.txt) and [runbook](../runbooks/MON-03-cpu-load.md).
+
+## HTTP content mismatch — 2026-10-05
+
+An additional trial changed the target health marker while keeping Nginx reachable. Both a server-side request and fresh Zabbix values showed HTTP200, while the web scenario failed its required-pattern check. The HTTP event opened at19:29:01UTC and automatically resolved at19:36:01UTC after the correct marker was restored on the target, lasting7m. An initial restoration on the wrong guest delayed recovery. Separate post-change terminal timestamps cannot establish exact detection/recovery latency. [Evidence and limits](evidence/2026-10-05-http-content.txt) · [Resolved event](evidence/2026-10-05-http-content-resolved.png).
+
+## Overview dashboard — 2026-10-05
+
+Screenshots verify six widgets in `NOC Lab Overview`: target agent availability, CPU utilization, available memory percentage, root-disk used percentage, current problems for both lab hosts, and target HTTP scenario status. Visible values included available(1.00), CPU0.22%, memory84.28%, root disk32.63% and HTTP Ok1, with no current problems. The operator subsequently confirmed that data updates and the layout persists after a browser reload. This verifies the basic dashboard; configuration export and restoration have not yet been tested.
+
+[Dashboard setup](DASHBOARD.md)
+
+## Configuration export — 2026-10-05
+
+The operator exported the target host from the frontend. The inspected YAML contains one host, the passive-agent interface, the Linux template link, the HTTP scenario and its custom trigger. The [public copy](../configs/zabbix/linux-target.yaml) matches the original bytes and contains no credentials or personal paths. This is content inspection, not an import or server-schema validation. Linked template contents, global dashboard, history and the discovered speed-item exclusion are not present. [Restoration prerequisites and limits](../configs/zabbix/README.md).
+
+## Application queue collection — 2026-10-05
+
+The operator verified Python3.12.3, a30-second processing baseline, and the enabled/active noc-queue guest service. The zabbix account can read its JSON. History screenshots subsequently show five fresh Queue: Raw metrics samples10s apart: produced/processed counters225→245, depth0, rejected0, paused0 and advancing telemetry/worker timestamps. This confirms passive collection through the custom template. Dependent metrics, triggers, fault/recovery experiments and template export remain pending. [Implementation and scope](QUEUE-DEMO.md).
 
 ## Historical cloud-image baseline — 2026-09-27
 
