@@ -29,7 +29,7 @@ Operator output confirms target Agent 2 version 7.0.31, enabled/running with suc
 
 A subsequent October 5 screenshot verifies fresh target root-filesystem samples (all checked 52s earlier): space used **32.6297% / 4.84 GB**, available **9.99 GB**, total **15.64 GB**, free inodes **90.5097%**, read-only flag **0**. These are reported filesystem metrics, not the virtual disk capacity. [Screenshot](evidence/2026-10-05-target-root-filesystem.png).
 
-**Export status:** target host YAML captured and inspected; exact template capture and fresh-instance restoration testing remain pending.
+**Export status:** target host YAML captured and inspected; Linux and custom queue template exports are captured and inspected; the host export is refreshed with both links; fresh-instance import is untested and deferred.
 
 ## Target HTTP endpoint — 2026-10-05
 
@@ -57,20 +57,36 @@ An additional trial changed the target health marker while keeping Nginx reachab
 
 ## Overview dashboard — 2026-10-05
 
-Screenshots verify six widgets in `NOC Lab Overview`: target agent availability, CPU utilization, available memory percentage, root-disk used percentage, current problems for both lab hosts, and target HTTP scenario status. Visible values included available(1.00), CPU0.22%, memory84.28%, root disk32.63% and HTTP Ok1, with no current problems. The operator subsequently confirmed that data updates and the layout persists after a browser reload. This verifies the basic dashboard; configuration export and restoration have not yet been tested.
+Screenshots verify six widgets in `NOC Lab Overview`: target agent availability, CPU utilization, available memory percentage, root-disk used percentage, current problems for both lab hosts, and target HTTP scenario status. Visible values included available(1.00), CPU0.22%, memory84.28%, root disk32.63% and HTTP Ok1, with no current problems. The operator subsequently confirmed that data updates and the layout persists after a browser reload. This verifies the basic dashboard; global dashboard export and restoration have not been tested; the setup recipe is documented.
 
 [Dashboard setup](DASHBOARD.md)
 
 ## Configuration export — 2026-10-05
 
-The operator exported the target host from the frontend. The inspected YAML contains one host, the passive-agent interface, the Linux template link, the HTTP scenario and its custom trigger. The [public copy](../configs/zabbix/linux-target.yaml) matches the original bytes and contains no credentials or personal paths. This is content inspection, not an import or server-schema validation. Linked template contents, global dashboard, history and the discovered speed-item exclusion are not present. [Restoration prerequisites and limits](../configs/zabbix/README.md).
+The operator exported the target host from the frontend. The inspected YAML contains one host, the passive-agent interface, the Linux template link, the HTTP scenario and its custom trigger. The original export was inspected for scope and secrets; the [public copy](../configs/zabbix/linux-target.yaml) was subsequently refreshed on October 6 to include both template links. This is content inspection, not an import or server-schema validation. Linked template contents, global dashboard, history and the discovered speed-item exclusion are not present. [Restoration prerequisites and limits](../configs/zabbix/README.md).
 
 ## Application queue collection — 2026-10-05
 
-The operator verified Python3.12.3, a30-second processing baseline, and the enabled/active noc-queue guest service. The zabbix account can read its JSON. History screenshots subsequently show five fresh Queue: Raw metrics samples10s apart: produced/processed counters225→245, depth0, rejected0, paused0 and advancing telemetry/worker timestamps. This confirms passive collection through the custom template. Dependent metrics, triggers, fault/recovery experiments and template export remain pending. [Implementation and scope](QUEUE-DEMO.md).
+The operator verified Python3.12.3, a30-second processing baseline, and the enabled/active noc-queue guest service. The zabbix account can read its JSON. History screenshots subsequently show five fresh Queue: Raw metrics samples10s apart: produced/processed counters225→245, depth0, rejected0, paused0 and advancing telemetry/worker timestamps. This confirms passive collection through the custom template. Dependent metrics and worker/backlog triggers were subsequently verified; the custom template export was subsequently captured and inspected, with import untested. [Implementation and scope](QUEUE-DEMO.md).
+
+## Application worker pause — 2026-10-06
+
+A150-second worker-only pause produced growing depth and a frozen worker heartbeat while telemetry continued. Worker warning opened13:25:48UTC and resolved13:27:48; backlog warning opened13:26:28 and resolved13:30:18. Pause/resume references13:25:16/13:27:46 give approximate detection delays32s/72s and recovery delays2s/152s respectively. Final fresh sample at13:30:28 showed depth0 and both timestamps advancing. Both events automatically resolved in one trial. Exact maximum depth/rejection count, dependency suppression and custom-template restoration remain unverified. Stale-publisher results are recorded below. [Evidence](evidence/2026-10-06-queue-worker.txt) · [Runbook](../runbooks/MON-05-queue-worker.md).
+
+## Stopped queue publisher — 2026-10-06
+
+Stop/start references13:35:50/13:37:50UTC bound a120-second service stop. The retained JSON stayed readable; telemetry event13:36:58→13:37:58 automatically resolved (approximate detection68s, recovery8s). Serviceactive,depth0 and advancing timestamps13:38:07 confirm recovery. However, a worker warning opened/resolved at13:37:58 (duration0), exposing restart noise. Its precise cause is unproven; initial heartbeat0 and mixing separate dependent timestamp samples are plausible mechanisms. A derived age from a single JSON snapshot was subsequently deployed and the inherited worker trigger updated. A120-second publisher-stop regression opened telemetry at13:46:08 and resolved13:47:08UTC (stop/start references13:45:06/13:47:06; approximate62s/2s delays), with no new worker warning visible. Finalactive,depth0,workerage0 and fresh timestamps13:47:27 confirm recovery. A subsequent45-second worker pause confirmed positive detection/recovery with the changed expression: pause/resume13:49:32/13:50:17UTC, event13:50:08→13:50:18, approximate36s/1s delays. After resume workerage0 and fresh timestamps confirmed liveness; depth12 was still decreasing. Complete drain for this short regression was not captured; the earlier full backlog trial remains valid. No-data branch and dependency suppression are untested. [Evidence](evidence/2026-10-06-queue-telemetry.txt).
 
 ## Historical cloud-image baseline — 2026-09-27
 
 The earlier automated build used different allocations, UEFI and kernel `6.8.0-142-generic`. It passed its own cloud-init, SSH, bidirectional ICMP, DNS/time and QEMU guest-agent checks. Those guests were subsequently replaced by the manual build above.
 
 [Historical observations](evidence/2026-09-27-guest-baseline.txt) are retained as dated evidence, not current-state claims. Private workstation details, credentials and session logs remain outside Git.
+
+## Custom queue export — 2026-10-06
+
+The inspected [template YAML](../configs/zabbix/noc-queue-template.yaml) contains five items, three triggers, the saved backlog dependency and corrected worker-age preprocessing/expression. Embedded JavaScript matches the reviewed source and the public copy is byte-identical to the operator export. No credentials or personal paths were found. YAML parsing and focused configuration checks subsequently passed. Zabbix server-schema validation and a fresh-instance import remain untested and deferred. [Restoration instructions](../configs/zabbix/README.md).
+
+## Export parameter audit — 2026-10-06
+
+Both template YAML files parse successfully. The installed Linux template is the passive variant, vendor7.0-4, with43 regular items and3 discovery rules; macros AGENT.TIMEOUT=3m, CPU.UTIL.CRIT=90 and LOAD_AVG_PER_CPU.MAX.WARN=1.5 match the tested settings. Focused checks confirmed UUID format/uniqueness per export, master references, CPU/agent expressions and queue JSONPath/JavaScript, history, units, recovery threshold and dependency. Queue export matches its public copy; the Linux public copy differs only by trimmed trailing whitespace and parses identically. The October6 refreshed host export links both templates and retains the verified agent address and HTTP scenario/trigger. These are offline checks, not an import test.

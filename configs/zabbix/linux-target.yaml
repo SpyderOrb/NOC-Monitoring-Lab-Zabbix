@@ -8,6 +8,7 @@ zabbix_export:
       name: linux-target
       templates:
         - name: 'Linux by Zabbix agent'
+        - name: 'NOC Queue by Zabbix agent'
       groups:
         - name: 'Linux servers'
       interfaces:

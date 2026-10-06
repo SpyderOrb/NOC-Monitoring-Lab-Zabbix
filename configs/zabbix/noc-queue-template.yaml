@@ -1,0 +1,115 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: c7b8c9cccff049bca1558e83a0f5eca9
+      template: 'NOC Queue by Zabbix agent'
+      name: 'NOC Queue by Zabbix agent'
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: d752c265af7c47ef9955ddf8835cc1e7
+          name: 'Queue: Depth'
+          type: DEPENDENT
+          key: noc.queue.depth
+          delay: '0'
+          history: 1d
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.queue_depth
+          master_item:
+            key: 'vfs.file.contents[/var/lib/noc-queue/metrics.json]'
+          triggers:
+            - uuid: 4b728ca3930941f1b5ca629d289eec29
+              expression: 'min(/NOC Queue by Zabbix agent/noc.queue.depth,1m)>10'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/NOC Queue by Zabbix agent/noc.queue.depth)<3'
+              name: 'Queue: Backlog is high'
+              priority: WARNING
+              dependencies:
+                - name: 'Queue: Telemetry is stale or missing'
+                  expression: 'now()-last(/NOC Queue by Zabbix agent/noc.queue.updated_at)>60 or nodata(/NOC Queue by Zabbix agent/noc.queue.updated_at,1m)=1'
+              tags:
+                - tag: component
+                  value: queue
+                - tag: scope
+                  value: performance
+        - uuid: 5803a4dd3683446aba22a3f6edd1673c
+          name: 'Queue: Telemetry updated at'
+          type: DEPENDENT
+          key: noc.queue.updated_at
+          delay: '0'
+          history: 1d
+          trends: '0'
+          units: unixtime
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.updated_at
+          master_item:
+            key: 'vfs.file.contents[/var/lib/noc-queue/metrics.json]'
+          triggers:
+            - uuid: 8d91bfa04d3b4f5eb10ee559e374991b
+              expression: 'now()-last(/NOC Queue by Zabbix agent/noc.queue.updated_at)>60 or nodata(/NOC Queue by Zabbix agent/noc.queue.updated_at,1m)=1'
+              name: 'Queue: Telemetry is stale or missing'
+              priority: AVERAGE
+              tags:
+                - tag: component
+                  value: queue
+                - tag: scope
+                  value: availability
+        - uuid: 032e9d4d83314abe831d750c37afe08a
+          name: 'Queue: Worker heartbeat age'
+          type: DEPENDENT
+          key: noc.queue.worker.age
+          delay: '0'
+          history: 1d
+          trends: '0'
+          units: s
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var m = JSON.parse(value);
+                  if (m.worker_last_seen === 0) return 0;
+                  return Math.max(0, m.updated_at - m.worker_last_seen);
+          master_item:
+            key: 'vfs.file.contents[/var/lib/noc-queue/metrics.json]'
+        - uuid: 5d62f5b36d0f4d8db64bc69a22d5b903
+          name: 'Queue: Worker last seen'
+          type: DEPENDENT
+          key: noc.queue.worker.last_seen
+          delay: '0'
+          history: 1d
+          trends: '0'
+          units: unixtime
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.worker_last_seen
+          master_item:
+            key: 'vfs.file.contents[/var/lib/noc-queue/metrics.json]'
+        - uuid: e5cd152d85554c338d231d87aea14159
+          name: 'Queue: Raw metrics'
+          key: 'vfs.file.contents[/var/lib/noc-queue/metrics.json]'
+          delay: 10s
+          history: 1d
+          value_type: TEXT
+          trends: '0'
+  triggers:
+    - uuid: a43eb44a41314ac8802e14b32f85181f
+      expression: |
+        last(/NOC Queue by Zabbix agent/noc.queue.worker.age)>30
+        and
+        now()-last(/NOC Queue by Zabbix agent/noc.queue.updated_at)<=30
+      name: 'Queue: Worker heartbeat stalled'
+      priority: WARNING
+      tags:
+        - tag: component
+          value: queue
+        - tag: scope
+          value: availability

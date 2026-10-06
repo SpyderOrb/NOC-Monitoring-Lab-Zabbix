@@ -1,0 +1,44 @@
+MON-05: Application worker pause and queue backlog
+Date: 2026-10-06
+Source: ordered operator-provided terminal, Latest data and Problems screenshots.
+All times below are UTC; frontend Europe/Warsaw displays UTC+2.
+
+Pause reference: 13:25:16 (immediately after control flag creation).
+Resume reference: 13:27:46 (immediately after flag removal), 150s apart.
+Worker event: 13:25:48 -> 13:27:48, automatically RESOLVED, duration2m.
+Backlog event: 13:26:28 -> 13:30:18, automatically RESOLVED, duration3m50s.
+Observed delay from pause reference: worker32s; backlog72s.
+Observed delay from resume reference: worker2s; backlog152s.
+These are one-trial approximate delays, not guaranteed bounds or exact action timestamps.
+
+During pause: observed depth11 ->16 ->45; worker last seen frozen at13:25:16,
+telemetry updated at13:26:47 and continuing10s increments.
+After resume: depth68 at telemetry/heartbeat13:27:57; depth38 at13:28:57.
+Final: depth0, telemetry and worker timestamps13:30:28, Last check1s.
+Problems view contains two Warning events, both later RESOLVED; no stale
+telemetry event visible in the provided unfiltered-severity target view.
+Exact maximum depth and rejected_total during the trial were not supplied.
+
+Recovery distinction: worker liveness recovers before accumulated work drains.
+Backlog recovery threshold is last(depth)<3; final observed depth0.
+At the time of this initial trial, backlog dependency on stale telemetry
+was suggested but not yet confirmed, and publisher-stop/export checks
+had not yet been performed. Later results are recorded below and in
+2026-10-06-queue-telemetry.txt and ../VALIDATION.md.
+
+Positive regression with derived-age expression:
+Pause reference13:49:32UTC; resume13:50:17UTC,45s apart.
+Worker event13:50:08 ->13:50:18, automaticallyRESOLVED, duration10s.
+Approximate detection36s, recovery1s.
+During pause age6s then26s, depths3 then13; heartbeat13:49:31 frozen,
+telemetry continues13:49:37/13:49:57.
+After resume age0, both timestamps13:50:37,Last check7s,depth12/change-5.
+This verifies positive worker detection/recovery after the restart-noise fix.
+Final queue drainage to0 is not shown for this short regression; previous
+150s trial already verified complete drainage and unchanged backlog recovery.
+No new backlog or stale telemetry event visible for the short pause.
+
+Final verification scope: the saved backlog dependency was later confirmed
+in the host view and template export; suppression during a parent fault
+was not tested. Publisher-stop regressions and export offline checks passed.
+The nodata branch and fresh-instance import remain untested.

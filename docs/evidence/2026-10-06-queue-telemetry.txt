@@ -1,0 +1,33 @@
+MON-06: Stopped publisher with a retained readable JSON file
+Date: 2026-10-06
+Source: ordered operator-provided terminal, Latest data and Problems screenshots.
+UTC timestamps; frontend Europe/Warsaw UTC+2.
+Service stop completion reference13:35:50; start reference13:37:50,120s apart.
+Telemetry event13:36:58 ->13:37:58, automatically RESOLVED, duration1m.
+Approximate detection68s and recovery8s from references; single trial.
+During stop, depth0, file telemetry/worker timestamp13:35:49, Last check10s.
+After start, serviceactive; finaldepth0, both timestamps13:38:07,
+Last check7s and timestamp changes+10s.
+
+Unexpected worker event13:37:58 ->13:37:58, displayed duration0.
+This is startup alert noise and must not be omitted from validation.
+Exact event cause not proven: script initially publishes worker_last_seen0;
+separate dependent timestamp updates can also mix pre/post-restart values.
+Proposed repair: compute worker age from two fields in one raw JSON sample,
+handle initial0 explicitly, then reference the derived age in worker trigger.
+At this initial checkpoint, repair deployment/retest was pending.
+Age branch of telemetry trigger verified;
+nodata branch and dependency suppression under backlog remain untested.
+
+Regression after derived worker-age trigger replacement:
+Stop reference13:45:06UTC; start13:47:06UTC,120s apart.
+Telemetry event13:46:08 ->13:47:08 automaticallyRESOLVED, duration1m.
+Approximate detection62s and recovery2s.
+Stopped timestamps remain13:45:06 while Last check refreshes5s then3s.
+Final serviceactive,depth0,workerage0,both timestamps13:47:27,check2s.
+Provided Queue Problems view shows only the telemetry event; no new
+worker warning is visible for this regression. This supports restart-noise
+correction for one observed restart, not a guarantee for all schedules.
+At this regression checkpoint, positive paused-worker detection was pending.
+It subsequently passed the 45s trial recorded in 2026-10-06-queue-worker.txt
+and 2026-10-06-queue-worker-retest.png (approximately 36s detection, 1s recovery).
