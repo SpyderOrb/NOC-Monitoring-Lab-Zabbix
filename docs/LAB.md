@@ -56,6 +56,6 @@ The local SSH client file is invoked from the project root using `ssh -F credent
 
 ## Configuration choices and historical automation
 
-You control VM sizing, disk capacity, subnet, guest accounts and authentication. Shut down a guest before changing persistent resource settings where required; keep reservations consistent with guest MACs. Monitoring intervals, thresholds and dashboards will be chosen during the monitoring stage.
+You control VM sizing, disk capacity, subnet, guest accounts and authentication. Shut down a guest before changing persistent resource settings where required; keep reservations consistent with guest MACs. The tested monitoring intervals, thresholds and dashboard layout are documented in the runbooks and dashboard guide.
 
 The existing [creation script](../scripts/create-guests.py), [cloud-init template](../configs/cloud-init/user-data.example) and [network XML](../configs/libvirt/noc-lab.xml) belong to the earlier **cloud-image baseline**. They use different allocations, UEFI, a system disk pool and fixed MAC/network settings. They are historical examples, not an installer or update command for the manual setup. Do not run them over these guests. The [historical evidence](evidence/2026-09-27-guest-baseline.txt) records that separate build.

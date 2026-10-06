@@ -9,7 +9,7 @@ This page explains the current lab. [Validation](VALIDATION.md) records the test
 | Part | Purpose |
 |---|---|
 | Physical computer | Runs the virtual machines. Fault experiments happen inside the target VM. |
-| `zabbix-server` | Collects measurements, store them in a database and serve the web interface. |
+| `zabbix-server` | Collects measurements, stores them in a database and serves the web interface. |
 | `linux-target` | Runs the monitored agent and HTTP service. This is where faults are introduced. |
 | `noc-lab` storage pool | Registers the project `vms/` folder containing separate guest disks; it is not a VM. |
 | `noc-lab` network | Connects the VMs and provides outbound access through NAT. |

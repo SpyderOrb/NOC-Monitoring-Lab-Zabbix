@@ -20,6 +20,6 @@ In Latest data, expect growing depth, a frozen worker timestamp and advancing te
 
 EXIT cleanup also attempts flag removal after errors or Ctrl+C; it cannot run after SIGKILL. If needed, remove only this demo flag on linux-target: `sudo -u noc-queue rm -f /var/lib/noc-queue/pause-worker`. Do not stop the service or fabricate JSON values for this trial. The queue is capped at 100; counters and jobs are in-memory and reset on service restart.
 
-The October 6 trial passed:150 s pause, worker detection 32 s and recovery 2 s relative to action references; backlog detection 72 s and recovery 152 s. Delays are single-trial approximations, not guaranteed bounds. Maximum depth and rejection count were not captured. [Evidence](../docs/evidence/2026-10-06-queue-worker.txt).
+The October 6 trial passed: 150s pause, worker detection 32 s and recovery 2 s relative to action references; backlog detection 72 s and recovery 152 s. Delays are single-trial approximations, not guaranteed bounds. Maximum depth and rejection count were not captured. [Evidence](../docs/evidence/2026-10-06-queue-worker.txt).
 
-After switching the worker trigger to single-JSON derived age, a 45-second positive regression passed (36 s detection,1 s recovery; fresh worker age 0 afterward). The unchanged backlog threshold was already verified by the 150-second trial. [Regression event](../docs/evidence/2026-10-06-queue-worker-retest.png).
+After switching the worker trigger to single-JSON derived age, a 45-second positive regression passed (36s detection, 1s recovery; fresh worker age 0 afterward). The unchanged backlog threshold was already verified by the 150-second trial. [Regression event](../docs/evidence/2026-10-06-queue-worker-retest.png).

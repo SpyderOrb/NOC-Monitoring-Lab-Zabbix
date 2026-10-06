@@ -11,11 +11,11 @@ The Average trigger `last(/linux-target/web.test.fail[HTTP health])>0` reports a
 ## Procedure
 
 1. Confirm healthy fresh HTTP values: failed step `0`, response code `200`, trigger OK. Verify `hostname` returns `linux-target` in the session where you change the file.
+
 2. On **linux-target**, replace only the health marker:
 
    ```bash
-   printf '%s
-' 'NOC-LAB-HTTP-FAIL' | sudo tee /var/www/html/health.txt
+   printf '%s\n' 'NOC-LAB-HTTP-FAIL' | sudo tee /var/www/html/health.txt
    ```
 
 3. From **zabbix-server**, request the target page and inspect the status and body:
@@ -25,12 +25,12 @@ The Average trigger `last(/linux-target/web.test.fail[HTTP health])>0` reports a
    ```
 
    Expect HTTP 200 with the wrong marker. In Zabbix, expect failed step `1`, a required-pattern error and the HTTP problem. Check sample timestamps, since old status values may still be visible.
+
 4. On **linux-target**, restore after capturing the problem, or within two minutes even if no problem appears:
 
    ```bash
    hostname
-   printf '%s
-' 'NOC-LAB-HTTP-OK' | sudo tee /var/www/html/health.txt
+   printf '%s\n' 'NOC-LAB-HTTP-OK' | sudo tee /var/www/html/health.txt
    ```
 
 5. Repeat the server-side request. Expect the correct marker, fresh failed step `0`/status `200`, and automatic RESOLVED status. No Nginx restart or manual event closure is needed.
