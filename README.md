@@ -1,47 +1,55 @@
 # 📡 NOC Monitoring Lab — Zabbix
 
-A small monitoring lab built around one workflow: **detect a fault, investigate, restore service and verify recovery**.
+A hands-on lab for monitoring Linux hosts and investigating service failures.
 
-Two Ubuntu virtual machines provide a practical environment for learning host, HTTP service and application monitoring with Zabbix.
+Two Ubuntu VMs run Zabbix and a monitored target. I tested six fault scenarios, checked that alerts cleared after recovery, and recorded the results. This repository contains the configuration exports, screenshots, scripts and runbooks from those tests.
 
-> **Verified scope:** Zabbix 7.0.31 collects host metrics from two Ubuntu VMs, checks HTTP status/content and monitors a simulated application queue. Six fault scenarios demonstrated automatic problem and recovery events, with observed timings and a six-widget dashboard. Configuration exports passed offline checks; import into a fresh Zabbix instance is untested and deferred. See [validation and limits](docs/VALIDATION.md).
+## The lab
 
-## How it works
+[![A browser connects to the Zabbix server at 192.168.77.10, which monitors a Linux target at 192.168.77.20](docs/topology.png)](docs/topology.png)
 
-One VM runs the monitoring server and the other is the target. Zabbix collects host measurements through Agent 2 and checks an HTTP health page. A bounded Python queue simulator demonstrates how to distinguish stalled processing, accumulated backlog and stale telemetry.
-
-[![Lab design: a browser connects to the Zabbix server at 192.168.77.10, which monitors a Linux target at 192.168.77.20](docs/topology.png)](docs/topology.png)
-
-*Lab design · CPU and memory collection verified on both guests · [Editable SVG](docs/topology.svg)*
+*[Editable diagram](docs/topology.svg) · [Setup details](docs/LAB.md)*
 
 | Component | Role |
 |---|---|
-| QEMU/KVM + libvirt | Run and manage the two VMs |
-| Ubuntu Server 24.04 LTS | Guest operating systems |
-| Zabbix 7.0 LTS | Server and target monitoring with a verified overview dashboard |
-| Target Nginx service | HTTP status/content monitoring and tested stop/recovery |
-| Python queue simulator | JSON telemetry, dependent items and worker/backlog/freshness alerts |
+| QEMU/KVM + libvirt | Runs the two Ubuntu Server 24.04 VMs |
+| Zabbix 7.0.31 | Collects metrics, evaluates alerts and displays the dashboard |
+| Zabbix Agent 2 | Provides CPU, memory, disk and queue data |
+| Target Nginx | Serves an HTTP health page checked for status and content |
+| Python queue simulator | Publishes JSON to test worker stalls, backlog and stale telemetry |
 
-## Fault exercises
+The six-widget dashboard shows target availability, CPU, memory, disk usage, current problems and HTTP health. [Dashboard setup](docs/DASHBOARD.md).
 
-| Scenario | Scope and result |
+## Faults I tested
+
+| Scenario | What the test showed |
 |---|---|
-| HTTP service stopped | Passed: detected failure and automatic recovery; [runbook](runbooks/MON-01-http-service.md) |
-| Target VM shut down | Passed: agent and HTTP problems automatically resolved after boot; [runbook](runbooks/MON-02-vm-outage.md) |
-| HTTP 200 with incorrect content | Passed: required-body check detected failure and automatic recovery; [evidence](docs/evidence/2026-10-05-http-content.txt) |
-| Bounded CPU load | Passed: 100% CPU observed, warning and automatic recovery; [runbook](runbooks/MON-03-cpu-load.md) |
-| Queue worker paused | Passed: worker and backlog warnings automatically resolved; corrected worker trigger also passed a short regression; [runbook](runbooks/MON-05-queue-worker.md) |
-| Queue telemetry publisher stopped | Passed: stale-file alert resolved; corrected restart regression showed no extra worker warning; [runbook](runbooks/MON-06-queue-telemetry.md) |
+| [Nginx stopped](runbooks/MON-01-http-service.md) | HTTP monitoring reported a problem and cleared it after restart. |
+| [Target VM shut down](runbooks/MON-02-vm-outage.md) | HTTP and agent checks detected the outage and recovered after boot. |
+| [HTTP 200 with incorrect content](runbooks/MON-04-http-content.md) | The page was reachable, but its health marker was wrong; the content check detected it. |
+| [Bounded CPU load](runbooks/MON-03-cpu-load.md) | Sustained high CPU triggered a warning that cleared after load ended. |
+| [Queue worker paused](runbooks/MON-05-queue-worker.md) | Worker liveness recovered first; the backlog alert cleared later, as the queue drained. |
+| [Queue publisher stopped](runbooks/MON-06-queue-telemetry.md) | Monitoring detected an old timestamp even though the JSON file was still readable. |
 
-The [configuration exports](configs/zabbix/README.md) include the installed Linux template, custom queue template and target host with its HTTP scenario. They capture monitoring configuration; VM disks, installed software and measurement/event history are outside their scope. Fresh-instance import is deferred. Notifications stay in the local dashboard.
+Each scenario produced automatic problem and recovery events. [Validation](docs/VALIDATION.md) records the observed timings and limits; individual test results are not guaranteed response times.
 
-## Explore
+## What I learned
 
-- **[Understand the lab](docs/GUIDE.md)** — components, monitoring concepts and learning order.
-- **[Setup and file locations](docs/LAB.md)** — VM sizing, networking, Ubuntu image source, and what is installed on the host versus inside the project or guests.
-- **[Dashboard setup](docs/DASHBOARD.md)** — the verified six-widget overview.
-- **[Application queue demo](docs/QUEUE-DEMO.md)** — bounded producer/worker simulator, dependent metrics, verified alerts and restart-noise correction.
-- **[Validation](docs/VALIDATION.md)** — observed results and test limits.
-- **Historical cloud-image examples:** [network XML](configs/libvirt/noc-lab.xml), [cloud-init template](configs/cloud-init/user-data.example) and [optional guest creation script](scripts/create-guests.py).
+An HTTP 200 response does not always mean a service is healthy. A readable metrics file can also contain old data. The queue tests helped separate these checks from worker liveness and the amount of work waiting to be processed.
 
-VM images, backups, credentials and personal working notes stay outside Git. The repository contains documentation, reusable configuration and recorded evidence.
+One restart test produced an unexpected worker warning. With help from the AI agent, I changed the worker-age calculation to use timestamps from one JSON sample, then repeated the restart and worker-pause tests. The recorded restart retest showed no extra worker warning, while the real pause still triggered an alert. [Queue design and evidence](docs/QUEUE-DEMO.md).
+
+## Read more
+
+- [Understand the lab](docs/GUIDE.md) — components and how measurements become alerts.
+- [Setup](docs/LAB.md) — VM sizing, networking and software locations.
+- [Queue demo](docs/QUEUE-DEMO.md) — the simulator, custom metrics and alert conditions.
+- [Validation](docs/VALIDATION.md) — results, screenshots and known limits.
+- [Configuration exports](configs/zabbix/README.md) — the Linux template, queue template and target host. Offline checks passed; import into a fresh Zabbix instance has not been tested.
+- [Project walkthrough](docs/PROJECT-STORY.md) — a short English explanation for an interview.
+
+## How I worked
+
+This was an AI-assisted learning project. I carried out the manual VM setup, guest configuration and fault tests. An AI coding agent helped me plan the work, troubleshoot issues, prepare scripts and documentation, and check the configuration exports. The results come from the recorded lab runs; untested areas are listed in Validation.
+
+The queue is an educational simulator, not a production job system. Notifications stay in the local Zabbix dashboard. VM images, backups, credentials and personal working notes stay outside Git.

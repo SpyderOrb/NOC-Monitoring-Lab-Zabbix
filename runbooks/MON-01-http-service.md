@@ -39,10 +39,6 @@ The 2026-10-05 trial measured approximately 24s from stop completion to problem 
 
 [Evidence and UTC timeline](../docs/evidence/2026-10-05-http-fault.txt) · [Event screenshot](../docs/evidence/2026-10-05-http-resolved.png)
 
-## Additional content-check exercise
+## Related exercise
 
-The same scenario can detect a wrong body even when HTTP status remains200. On `linux-target` only, verify `hostname`, then replace `/var/www/html/health.txt` with `NOC-LAB-HTTP-FAIL` using `printf '%s\n' 'NOC-LAB-HTTP-FAIL' | sudo tee /var/www/html/health.txt`. From the monitoring server, request `http://192.168.77.20/health.txt` and verify200 plus the incorrect marker. Capture failed step1 and the required-pattern error.
-
-Restore `NOC-LAB-HTTP-OK` with the same target-side command after observing the problem, or within two minutes. Confirm the target hostname before restoration: writing the same path on the monitoring server does not repair the target. Verify automatic recovery, without restarting Nginx or manually closing the event.
-
-The October5 content trial passed, with a7m recorded event due to delayed correct-host restoration. Action references were entered after writes, so no precise latency is claimed. [Evidence](../docs/evidence/2026-10-05-http-content.txt).
+[MON-04 — HTTP 200 with incorrect content](MON-04-http-content.md) tests the same health check while Nginx remains running. It demonstrates why a successful HTTP response alone does not prove correct application behavior.
