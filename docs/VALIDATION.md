@@ -16,6 +16,8 @@ The results below come from manual lab tests, recorded terminal output and Zabbi
 
 The dashboard and offline configuration-export checks are also verified. Fresh-instance import, the queue `nodata()` branch and backlog-dependency suppression during a parent fault have not been tested. The original restart warning and the subsequent correction are documented below.
 
+The October 7 repository review added [monitoring setup instructions](MONITORING.md) and explicit queue installation commands without changing the guests or exported templates. A local simulator/preprocessing check reproduced the [initially paused worker detection gap](QUEUE-DEMO.md#verified-zabbix-collection); this adds a known limit, not a new Zabbix fault/recovery result.
+
 ## Manual Ubuntu baseline — 2026-10-02–03
 
 Both guests were installed manually through virt-manager using the verified Ubuntu Server ISO. The checks below are based on operator-provided console/SSH output; local SSH configuration was also inspected. See the [concise evidence record](evidence/2026-10-02-manual-baseline.txt).

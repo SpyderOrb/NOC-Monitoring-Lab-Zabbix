@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="590" viewBox="0 0 960 590" role="img" aria-labelledby="title desc">
-  <title id="title">NOC Monitoring Lab: planned Zabbix monitoring flow</title>
-  <desc id="desc">The host browser will access Zabbix at 192.168.77.10. The server will monitor a Linux target at 192.168.77.20 through agent and HTTP checks. Both Ubuntu guests are running on the configured noc-lab NAT network, 192.168.77.0/24, with gateway 192.168.77.1. Guest boot, SSH and network access are verified; the Zabbix stack and target monitoring services are not deployed yet.</desc>
+  <title id="title">NOC Monitoring Lab: Zabbix monitoring flow</title>
+  <desc id="desc">The host browser accesses Zabbix at 192.168.77.10 on port 8080. The server polls the Linux target at 192.168.77.20 using passive Agent 2 checks on port 10050 and HTTP health checks on port 80. The target also runs a queue simulator whose JSON is read through the agent. Both Ubuntu guests use the noc-lab NAT network, 192.168.77.0/24, with gateway 192.168.77.1. Six fault and recovery scenarios have recorded evidence; see VALIDATION.md for scope and limits.</desc>
   <defs>
     <style>
       text { font-family: "DejaVu Sans", sans-serif; fill: #182b42; }
@@ -19,36 +19,36 @@
 
   <rect width="960" height="590" fill="#ffffff"/>
   <text x="40" y="57" class="title">NOC Monitoring Lab</text>
-  <text x="40" y="90" class="subtitle">Zabbix · Planned monitoring flow</text>
+  <text x="40" y="90" class="subtitle">Zabbix · Host, HTTP and queue monitoring</text>
 
   <!-- The browser runs on the physical host, outside the guest network. -->
   <rect x="70" y="128" width="330" height="84" rx="14" fill="#ffffff" stroke="#c9d5e1" stroke-width="2"/>
   <text x="235" y="163" text-anchor="middle" class="name">Host browser</text>
   <text x="235" y="193" text-anchor="middle" class="detail">View dashboard and events</text>
 
-  <!-- The network and guests are ready; the monitoring flow is still planned. -->
+  <!-- Application connections initiate in the direction shown by the arrows. -->
   <rect x="40" y="268" width="880" height="252" rx="18" fill="#f4f7fb" stroke="#c9d5e1" stroke-width="2"/>
   <text x="890" y="302" text-anchor="end" class="name">noc-lab · IPv4 NAT</text>
   <text x="890" y="331" text-anchor="end" class="detail">192.168.77.0/24 · Gateway 192.168.77.1</text>
 
   <path d="M235 212 V346" class="link"/>
-  <text x="255" y="250" class="label">Web interface</text>
+  <text x="255" y="250" class="label">HTTP :8080</text>
 
   <rect x="70" y="350" width="330" height="144" rx="14" fill="#e3efff" stroke="#3d70ae" stroke-width="2"/>
   <text x="235" y="384" text-anchor="middle" class="name">Zabbix server VM</text>
   <text x="235" y="419" text-anchor="middle" class="address">192.168.77.10</text>
-  <text x="235" y="450" text-anchor="middle" class="detail">Zabbix stack: planned</text>
-  <text x="235" y="479" text-anchor="middle" class="detail">Ubuntu 24.04.5 · ready</text>
+  <text x="235" y="450" text-anchor="middle" class="detail">Zabbix 7.0 · PostgreSQL</text>
+  <text x="235" y="479" text-anchor="middle" class="detail">Ubuntu Server 24.04.5</text>
 
   <path d="M400 422 H556" class="link"/>
   <text x="480" y="380" text-anchor="middle" class="label">Agent + HTTP</text>
-  <text x="480" y="404" text-anchor="middle" class="label">checks</text>
+  <text x="480" y="404" text-anchor="middle" class="label">10050 / 80</text>
 
   <rect x="560" y="350" width="330" height="144" rx="14" fill="#e3f3ee" stroke="#408774" stroke-width="2"/>
   <text x="725" y="384" text-anchor="middle" class="name">Linux target VM</text>
   <text x="725" y="419" text-anchor="middle" class="address">192.168.77.20</text>
-  <text x="725" y="450" text-anchor="middle" class="detail">Agent + HTTP: planned</text>
-  <text x="725" y="479" text-anchor="middle" class="detail">Ubuntu 24.04.5 · ready</text>
+  <text x="725" y="450" text-anchor="middle" class="detail">Agent 2 · Nginx · Queue</text>
+  <text x="725" y="479" text-anchor="middle" class="detail">Ubuntu Server 24.04.5</text>
 
-  <text x="40" y="562" class="subtitle">Verified: guest boot, SSH and network access</text>
+  <text x="40" y="562" class="subtitle">Six fault/recovery scenarios · Evidence and limits in VALIDATION.md</text>
 </svg>

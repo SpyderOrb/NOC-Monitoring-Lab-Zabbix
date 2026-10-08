@@ -20,6 +20,24 @@ The supplied `configs/systemd/noc-queue.service` runs as a dedicated unprivilege
 
 After validating the unit, reload systemd and enable/start noc-queue. Verify active state, boot enablement and JSON readability as the zabbix user. Production use would require a separate design; this remains an in-memory educational simulator. No real business jobs are persisted.
 
+For a fresh target, first copy [noc-queue.py](../scripts/noc-queue.py) and [noc-queue.service](../configs/systemd/noc-queue.service) into `~/lab-install/` inside **linux-target**. Agent 2 must already be installed so the `zabbix` account exists. Run the following there, one command at a time, stopping on errors. Create the service account only if it does not already exist; inspect an existing account before reusing it.
+
+```bash
+hostname
+sudo useradd --system --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin noc-queue
+sudo install -d -o root -g root -m 0755 /opt/noc-queue
+sudo install -o root -g root -m 0644 ~/lab-install/noc-queue.py /opt/noc-queue/noc-queue.py
+sudo install -o root -g root -m 0644 ~/lab-install/noc-queue.service /etc/systemd/system/noc-queue.service
+sudo systemd-analyze verify /etc/systemd/system/noc-queue.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now noc-queue
+systemctl is-active noc-queue
+systemctl is-enabled noc-queue
+sudo -u zabbix cat /var/lib/noc-queue/metrics.json
+```
+
+Expect hostname `linux-target`, then `active`, `enabled` and readable JSON. Compare two JSON samples a few seconds apart: both timestamps should advance and `processed_total` should increase. A sample taken immediately at startup can have heartbeat 0; wait for the first worker tick before testing. Installing these files on the monitoring server would not deploy the target service.
+
 ## Verified Zabbix collection
 
 Create a template named `NOC Queue by Zabbix agent` in `Templates/Applications`. Add a passive Zabbix agent item named `Queue: Raw metrics`, key `vfs.file.contents[/var/lib/noc-queue/metrics.json]`, information type Text, update interval 10 s and history 1 d. Link the template to linux-target alongside Linux by Zabbix agent. No custom agent parameter is required.
@@ -35,6 +53,8 @@ The current template has five items:
 | Worker heartbeat age | `noc.queue.worker.age` | JavaScript: difference between the two timestamps from one JSON sample, in seconds |
 
 All four dependent items use the raw item as their master, Numeric (unsigned), one day of history and no trends. The age calculation returns 0 before the worker's first heartbeat. Recorded samples show fresh JSON, advancing timestamps and a healthy worker age of 0 after recovery. The script and collection were checked separately from the fault trials.
+
+**Startup limit:** if `pause-worker` already exists when the simulator starts, `worker_last_seen` stays 0 and the preprocessing guard keeps worker age at 0. The worker-stall trigger therefore cannot detect this initial pause, even while the backlog grows. This follows from the current script and preprocessing and was reproduced in a local smoke check, not in a Zabbix guest fault trial. Begin MON-05 from an advancing, nonzero heartbeat. Tracking time since process startup would require a coordinated simulator/template change and a new startup/restart regression; the recorded exports remain unchanged.
 
 ## Alert conditions
 

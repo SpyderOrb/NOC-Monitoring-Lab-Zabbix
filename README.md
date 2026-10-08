@@ -43,6 +43,7 @@ One restart test produced an unexpected worker warning. With help from the AI ag
 
 - [Understand the lab](docs/GUIDE.md) — components and how measurements become alerts.
 - [Setup](docs/LAB.md) — VM sizing, networking and software locations.
+- [Configure monitoring](docs/MONITORING.md) — server/frontend, passive agent, HTTP endpoint and the path from installed guests to collected metrics.
 - [Queue demo](docs/QUEUE-DEMO.md) — the simulator, custom metrics and alert conditions.
 - [Validation](docs/VALIDATION.md) — results, screenshots and known limits.
 - [Configuration exports](configs/zabbix/README.md) — the Linux template, queue template and target host. Offline checks passed; import into a fresh Zabbix instance has not been tested.

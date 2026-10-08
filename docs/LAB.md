@@ -54,6 +54,8 @@ Pool/network autostart makes those resources available when libvirt starts. Gues
 
 The local SSH client file is invoked from the project root using `ssh -F credentials/ssh_config.manual zabbix-server` or `linux-target`. Its relative key/known-host paths rely on that working directory. Private access files are intentionally not shipped in this repository.
 
+Continue with [monitoring installation and configuration](MONITORING.md): server/frontend, passive target Agent 2, HTTP endpoint, queue service and frontend setup. That guide also records connection directions and the virtual-interface speed exclusion missing from host exports.
+
 ## Configuration choices and historical automation
 
 You control VM sizing, disk capacity, subnet, guest accounts and authentication. Shut down a guest before changing persistent resource settings where required; keep reservations consistent with guest MACs. The tested monitoring intervals, thresholds and dashboard layout are documented in the runbooks and dashboard guide.

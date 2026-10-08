@@ -17,7 +17,7 @@ Verified settings include agent timeout `3m`, CPU threshold `90`, per-CPU load t
 
 ## Optional import procedure — not yet tested
 
-Use a separate Zabbix 7.0 instance with its own database. The monitoring server and target software must already be installed; YAML does not install Ubuntu, Zabbix, Agent 2, Nginx or the queue service.
+Use a separate Zabbix 7.0 instance with its own database. The monitoring server and target software must already be installed; YAML does not install Ubuntu, Zabbix, Agent 2, Nginx or the queue service. Follow the [monitoring setup guide](../../docs/MONITORING.md) for the guest-side prerequisites.
 
 Prepare the target Agent 2 allowlist for passive checks from that server. Deploy the [queue simulator/service](../../docs/QUEUE-DEMO.md), check JSON readability and synchronize clocks. Nginx must serve `/health.txt` with the expected marker. Adjust the exported interface address and HTTP URL for a different subnet; a host rename also requires updating its trigger expression.
 
@@ -34,6 +34,6 @@ Check the expected template links, enabled items/triggers, fresh CPU/memory/root
 - VM disks, guest packages, network settings or agent/service configuration.
 - Database users, measurement history and past problem/recovery events.
 - The global **NOC Lab Overview** dashboard; recreate it using the [dashboard guide](../../docs/DASHBOARD.md). Official template dashboards are included in the Linux template.
-- The manually disabled discovered interface-speed item. If the virtual target reports nominal speed `-1`, reapply the documented host-only exclusion after discovery.
+- The manually disabled discovered interface-speed item. If the virtual target reports nominal speed `-1`, reapply the [host-only exclusion](../../docs/MONITORING.md#virtual-interface-speed-exception) after discovery.
 
 Offline checks do not replace Zabbix server-schema validation or an actual import. [Recorded verification and limits](../../docs/VALIDATION.md).
