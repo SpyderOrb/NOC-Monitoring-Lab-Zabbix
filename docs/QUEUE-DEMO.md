@@ -2,13 +2,13 @@
 
 This demo adds application checks to the host monitoring. A producer adds jobs and a worker processes them. Pausing the worker lets the queue grow while telemetry keeps updating; stopping the entire service leaves a readable but outdated metrics file.
 
-Worker, backlog and stale-file alerts all produced problem and recovery events in the recorded tests. A restart warning led to a change in the worker-age calculation and two follow-up tests. See the results below and the [configuration export](../configs/zabbix/noc-queue-template.yaml).
+Worker, backlog and stale-file alerts all produced problem and recovery events in the recorded tests. A restart warning led to a change in the worker-age calculation and two follow-up tests. Those results use the [October 6 export](../configs/zabbix/recorded/noc-queue-template-2026-10-06.yaml). The current source also contains an [offline-tested startup fix](#startup-fix-and-upgrade-order), which has not been deployed or tested in Zabbix.
 
 `scripts/noc-queue.py` uses the Python standard library on Linux. One process simulates a producer (one job every two seconds) and worker (one job per second). Jobs are integer IDs in an in-memory deque, not external business tasks. Maximum queue depth is 100; excess arrivals increment a rejection counter. Restart resets the queue and counters. There is no unbounded job file or per-job log.
 
 Run with `--state-dir DIRECTORY`; optional `--duration SECONDS` stops a preliminary run automatically. Without a duration, SIGINT/SIGTERM stops the process. An exclusive file lock prevents concurrent instances using the same directory. The state directory must be dedicated to this demo.
 
-Telemetry is replaced atomically once per second in `metrics.json`. Fields include queue_depth, queue_capacity, produced_total, processed_total, rejected_total, worker_paused, worker_last_seen and updated_at. Timestamps are Unix seconds. Worker heartbeat advances even when the queue is empty; before its first tick it is 0.
+Telemetry is replaced atomically once per second in `metrics.json`. Fields include queue_depth, queue_capacity, produced_total, processed_total, rejected_total, worker_paused, worker_last_seen, updated_at and started_at. Timestamps are Unix seconds. The new `started_at` field is fixed for each process lifetime and changes on restart; it is an additive field in schema version 1. Worker heartbeat advances even when the queue is empty; before its first tick it is 0.
 
 A file named `pause-worker` in the state directory pauses simulated processing while production and telemetry continue. Removing that flag resumes processing. This permits distinguishing an application worker stall from an unavailable agent or stale telemetry publisher. Stopping the whole script leaves the last JSON file in place, so monitoring must separately detect an old updated_at value; repeated reads alone do not prove freshness.
 
@@ -50,11 +50,31 @@ The current template has five items:
 | Queue depth | `noc.queue.depth` | JSONPath `$.queue_depth` |
 | Worker last seen | `noc.queue.worker.last_seen` | JSONPath `$.worker_last_seen`; Unix timestamp |
 | Telemetry updated at | `noc.queue.updated_at` | JSONPath `$.updated_at`; Unix timestamp |
-| Worker heartbeat age | `noc.queue.worker.age` | JavaScript: difference between the two timestamps from one JSON sample, in seconds |
+| Worker heartbeat age | `noc.queue.worker.age` | JavaScript: age of the last heartbeat, or process startup before the first heartbeat, from one JSON sample |
 
-All four dependent items use the raw item as their master, Numeric (unsigned), one day of history and no trends. The age calculation returns 0 before the worker's first heartbeat. Recorded samples show fresh JSON, advancing timestamps and a healthy worker age of 0 after recovery. The script and collection were checked separately from the fault trials.
+All four dependent items use the raw item as their master, Numeric (unsigned), one day of history and no trends. In the recorded October 6 version, age returns 0 before the first heartbeat. The revised source uses elapsed time since `started_at` until a real heartbeat arrives. Recorded guest samples show fresh JSON, advancing timestamps and a healthy worker age of 0 after recovery; they do not validate the newer startup behavior.
 
-**Startup limit:** if `pause-worker` already exists when the simulator starts, `worker_last_seen` stays 0 and the preprocessing guard keeps worker age at 0. The worker-stall trigger therefore cannot detect this initial pause, even while the backlog grows. This follows from the current script and preprocessing and was reproduced in a local smoke check, not in a Zabbix guest fault trial. Begin MON-05 from an advancing, nonzero heartbeat. Tracking time since process startup would require a coordinated simulator/template change and a new startup/restart regression; the recorded exports remain unchanged.
+**Recorded-version limit:** if `pause-worker` already exists at startup, the October 6 preprocessing keeps worker age at 0 indefinitely. That version cannot detect the initial worker pause. The source fix below addresses this case; no guest update is claimed. Begin the existing MON-05 trial from an advancing, nonzero heartbeat.
+
+## Startup fix and upgrade order
+
+The revised simulator publishes its process start time without inventing a worker heartbeat. [Preprocessing](../configs/zabbix/queue-worker-age.js) uses `updated_at - started_at` while `worker_last_seen` is zero, then `updated_at - worker_last_seen` once the worker runs. Both values come from the same JSON sample. A pause present at startup can now produce age greater than the existing 30-second threshold; a normal restart begins at age zero. Wall-clock rollback remains clamped to zero, so synchronized guest/server clocks are still required.
+
+Missing, negative, fractional or nonnumeric timestamps produce a preprocessing error. In particular, an older sample with heartbeat zero and no `started_at` cannot silently appear healthy. Older samples with a valid nonzero heartbeat remain readable. Zabbix supports errors raised from its [JavaScript preprocessing function body](https://www.zabbix.com/documentation/7.0/en/manual/config/items/preprocessing/javascript).
+
+The following upgrade sequence is proposed and **has not been performed in the lab**:
+
+1. Preserve the installed script and export the current queue template. On the target, install the revised simulator and restart its service in a planned test window; restart clears this demo's in-memory jobs and counters. Confirm fresh JSON contains `started_at`. The old template tolerates the extra field.
+2. In the queue template's `Queue: Worker heartbeat age` item, replace only the JavaScript preprocessing body with the supplied source. The revised YAML is an alternative for a separate import test; it retains the original template/item UUIDs and would update the existing template, not create an independent copy. Keep unrelated settings and triggers unchanged.
+3. Verify normal startup, a worker paused before its first heartbeat, pause/recovery after normal work, and publisher restart. Capture fresh samples and actual Zabbix problem/recovery events before claiming integration success or replacing the recorded export. Remove the pause flag and restore healthy processing at the end of each trial.
+
+For rollback, restore the prior preprocessing first. Its old zero-heartbeat behavior works with the extra JSON field. Restore the saved simulator too if needed; restarting it again resets the in-memory queue. This rollback also restores the documented initial-pause limitation.
+
+## Offline regression checks
+
+On Linux, run `python3 -m unittest discover -s tests -v` from the repository root with Python 3.9+ and Node.js installed. No additional Python or npm packages are needed. The same command runs in [GitHub Actions](../.github/workflows/check-queue.yml).
+
+The [tests](../tests/test_queue.py) exercise the actual simulator loop with a controlled clock for normal startup, initial pause/recovery, a later pause and healthy/paused restarts. They execute the preprocessing against the generated samples, reject invalid timestamps, preserve the recorded export and check source/template equality. One real subprocess check covers duplicate-instance rejection, graceful shutdown and lock release. Temporary state stays outside the lab; no guest services are contacted. Node checks the function's logic, not Zabbix's Duktape integration, trigger scheduling or import schema.
 
 ## Alert conditions
 
@@ -72,7 +92,7 @@ A 150-second guest-only worker pause left production and JSON publishing active.
 
 The service was administratively stopped for 120 s. Its final JSON remained readable through Agent 2. The telemetry alert opened 13:36:58 UTC and automatically resolved 13:37:58 after restart. Fresh advancing timestamps and depth 0 confirm final healthy state. A transient worker alert also opened and resolved at 13:37:58 (displayed duration 0); this is a known restart-noise issue, not a clean worker-alert acceptance. [Evidence and limits](evidence/2026-10-06-queue-telemetry.txt) · [Events including transient warning](evidence/2026-10-06-queue-telemetry-resolved.png).
 
-Correction verified in the recorded regressions: a dependent `noc.queue.worker.age` item uses [JavaScript preprocessing](../configs/zabbix/queue-worker-age.js) on the raw JSON. This computes timestamp difference from one sample, with 0 during the initial pre-heartbeat tick. The inherited worker trigger references this derived age and was verified enabled/OK without a visible error. One publisher-restart regression passed after this change: detection 62 s, recovery 2 s and no new worker warning visible. A 45-second positive worker-pause check passed: detection 36 s, recovery 1 s and worker age 0 after resume.
+Correction verified in the recorded regressions: a dependent `noc.queue.worker.age` item uses the JavaScript preserved in the [October 6 export](../configs/zabbix/recorded/noc-queue-template-2026-10-06.yaml) on the raw JSON. This computes timestamp difference from one sample, with 0 during the initial pre-heartbeat tick. The inherited worker trigger references this derived age and was verified enabled/OK without a visible error. One publisher-restart regression passed after this change: detection 62 s, recovery 2 s and no new worker warning visible. A 45-second positive worker-pause check passed: detection 36 s, recovery 1 s and worker age 0 after resume.
 
 The corrected publisher-stop regression used stop/start references 13:45:06/13:47:06 UTC. Telemetry event 13:46:08→13:47:08 automatically resolved; final depth 0, worker age 0 and advancing timestamps confirm recovery. [Regression event](evidence/2026-10-06-queue-telemetry-retest.png). Absence of a new worker warning is verified for this one run, not every scheduling possibility.
 

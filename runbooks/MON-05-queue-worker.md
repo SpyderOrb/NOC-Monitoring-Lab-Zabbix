@@ -2,7 +2,7 @@
 
 Scope: disposable linux-target guest running the [queue simulator](../docs/QUEUE-DEMO.md), with five supported queue items and three enabled triggers in normal state. Do not run on the physical host or monitoring server. Verify guest hostname before starting.
 
-Before pausing, compare fresh samples: `worker_last_seen` must be nonzero and advancing, telemetry must be fresh, and depth should be near zero. A worker paused before its first heartbeat is outside this trial and has a [known detection gap](../docs/QUEUE-DEMO.md#verified-zabbix-collection).
+Before pausing, compare fresh samples: `worker_last_seen` must be nonzero and advancing, telemetry must be fresh, and depth should be near zero. A worker paused before its first heartbeat is outside this recorded trial; the [startup fix and its pending guest validation](../docs/QUEUE-DEMO.md#startup-fix-and-upgrade-order) are documented separately.
 
 On linux-target, pause the simulated worker for 150 s while leaving production and telemetry running:
 

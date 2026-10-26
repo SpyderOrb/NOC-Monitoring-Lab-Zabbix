@@ -1,0 +1,32 @@
+name: Offline queue regressions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/noc-queue.py'
+      - 'configs/zabbix/**'
+      - 'tests/**'
+      - '.github/workflows/check-queue.yml'
+  pull_request:
+    paths:
+      - 'scripts/noc-queue.py'
+      - 'configs/zabbix/**'
+      - 'tests/**'
+      - '.github/workflows/check-queue.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  queue:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test simulator and preprocessing offline
+        run: python3 -m unittest discover -s tests -v

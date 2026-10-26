@@ -18,6 +18,12 @@ The dashboard and offline configuration-export checks are also verified. Fresh-i
 
 The October 7 repository review added [monitoring setup instructions](MONITORING.md) and explicit queue installation commands without changing the guests or exported templates. A local simulator/preprocessing check reproduced the [initially paused worker detection gap](QUEUE-DEMO.md#verified-zabbix-collection); this adds a known limit, not a new Zabbix fault/recovery result.
 
+## Queue startup revision — 2026-10-26
+
+The source now publishes `started_at` and measures age from process startup until the first real heartbeat. Seven offline regression tests pass: normal startup, initial pause/recovery/draining, later pause/recovery, healthy and paused restarts, invalid/legacy timestamps, exact template/source correspondence and real-process lock/shutdown behavior. The timing scenarios run the actual simulator loop with a controlled clock; JavaScript is evaluated by Node.js. These checks do not establish actual Zabbix event timing, Duktape execution, import success or guest deployment, all of which remain untested for this revision.
+
+The unchanged [October 6 template](../configs/zabbix/recorded/noc-queue-template-2026-10-06.yaml) remains the artifact for the recorded guest trials. Its SHA-256 is `03ec42a545b5502794c1355a780f0e7b40b0a2c47f67b4a34d1db31e9c3c7a36`. The revised YAML changes only worker-age preprocessing; item UUIDs, thresholds and other settings are unchanged. [Upgrade order and pending acceptance](QUEUE-DEMO.md#startup-fix-and-upgrade-order).
+
 ## Manual Ubuntu baseline — 2026-10-02–03
 
 Both guests were installed manually through virt-manager using the verified Ubuntu Server ISO. The checks below are based on operator-provided console/SSH output; local SSH configuration was also inspected. See the [concise evidence record](evidence/2026-10-02-manual-baseline.txt).
@@ -103,7 +109,7 @@ The earlier automated build used different allocations, UEFI and kernel `6.8.0-1
 
 ## Custom queue export — 2026-10-06
 
-The inspected [template YAML](../configs/zabbix/noc-queue-template.yaml) contains five items, three triggers, the saved backlog dependency and corrected worker-age preprocessing/expression. Embedded JavaScript matches the reviewed source and the public copy is byte-identical to the operator export. No credentials or personal paths were found. YAML parsing and focused configuration checks subsequently passed. Zabbix server-schema validation and a fresh-instance import remain untested and deferred. [Restoration instructions](../configs/zabbix/README.md).
+The inspected [recorded template YAML](../configs/zabbix/recorded/noc-queue-template-2026-10-06.yaml) contains five items, three triggers, the saved backlog dependency and corrected worker-age preprocessing/expression. Embedded JavaScript matched the source at capture time; the recorded copy remains byte-identical to the operator export. No credentials or personal paths were found. YAML parsing and focused configuration checks subsequently passed. Zabbix server-schema validation and a fresh-instance import remain untested and deferred. [Restoration instructions](../configs/zabbix/README.md).
 
 ## Export parameter audit — 2026-10-06
 

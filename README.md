@@ -49,6 +49,10 @@ One restart test produced an unexpected worker warning. With help from the AI ag
 - [Configuration exports](configs/zabbix/README.md) — the Linux template, queue template and target host. Offline checks passed; import into a fresh Zabbix instance has not been tested.
 - [Project walkthrough](docs/PROJECT-STORY.md) — a short English explanation for an interview.
 
+## Check the queue code locally
+
+Run `python3 -m unittest discover -s tests -v` on Linux with Python 3.9+ and Node.js. The [offline tests](docs/QUEUE-DEMO.md#offline-regression-checks) cover startup, pauses, recovery, restarts, timestamp validation and template/source consistency; [GitHub Actions](.github/workflows/check-queue.yml) runs them automatically. The latest source fixes the initially paused worker case, but guest deployment and Zabbix integration of that revision are still pending. The original tested export is preserved separately.
+
 ## How I worked
 
 This was an AI-assisted learning project. I carried out the manual VM setup, guest configuration and fault tests. An AI coding agent helped me plan the work, troubleshoot issues, prepare scripts and documentation, and check the configuration exports. The results come from the recorded lab runs; untested areas are listed in Validation.

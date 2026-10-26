@@ -1,3 +1,14 @@
 var m = JSON.parse(value);
-if (m.worker_last_seen === 0) return 0;
-return Math.max(0, m.updated_at - m.worker_last_seen);
+
+function timestamp(name) {
+    var n = m[name];
+    if (typeof n !== 'number' || !isFinite(n) || n < 0 || Math.floor(n) !== n) {
+        throw 'Missing or invalid queue timestamp: ' + name;
+    }
+    return n;
+}
+
+var reference = timestamp('worker_last_seen');
+// Before the first heartbeat, measure how long this process has been waiting.
+if (reference === 0) reference = timestamp('started_at');
+return Math.max(0, timestamp('updated_at') - reference);

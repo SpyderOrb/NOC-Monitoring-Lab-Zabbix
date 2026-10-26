@@ -38,6 +38,8 @@ def main():
     capacity = 100
     produced = processed = rejected = 0
     started = time.monotonic()
+    # Keep a real startup reference without inventing a worker heartbeat.
+    started_at = int(time.time())
     next_produce = started + 2
     next_work = started + 1
     next_publish = started
@@ -66,6 +68,7 @@ def main():
             next_publish = now + 1
             metrics = {
                 "schema_version": 1,
+                "started_at": started_at,
                 "updated_at": int(time.time()),
                 "queue_depth": len(queue),
                 "queue_capacity": capacity,
