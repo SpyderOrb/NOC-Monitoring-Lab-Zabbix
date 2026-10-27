@@ -26,8 +26,8 @@ The six-widget dashboard shows target availability, CPU, memory, disk usage, cur
 |---|---|
 | [Nginx stopped](runbooks/MON-01-http-service.md) | HTTP monitoring reported a problem and cleared it after restart. |
 | [Target VM shut down](runbooks/MON-02-vm-outage.md) | HTTP and agent checks detected the outage and recovered after boot. |
-| [HTTP 200 with incorrect content](runbooks/MON-04-http-content.md) | The page was reachable, but its health marker was wrong; the content check detected it. |
 | [Bounded CPU load](runbooks/MON-03-cpu-load.md) | Sustained high CPU triggered a warning that cleared after load ended. |
+| [HTTP 200 with incorrect content](runbooks/MON-04-http-content.md) | The page was reachable, but its health marker was wrong; the content check detected it. |
 | [Queue worker paused](runbooks/MON-05-queue-worker.md) | Worker liveness recovered first; the backlog alert cleared later, as the queue drained. |
 | [Queue publisher stopped](runbooks/MON-06-queue-telemetry.md) | Monitoring detected an old timestamp even though the JSON file was still readable. |
 
